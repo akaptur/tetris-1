@@ -1,8 +1,6 @@
-import os, sys, pygame, random, weakref
+import os, sys, pygame, random
 from pygame.locals import *
 from random import choice
-
-_id2obj_dict = weakref.WeakValueDictionary()
 
 pygame.init()
 
@@ -169,14 +167,12 @@ def stop_object(movingsprite):
 
 def start_game():
     global game_in_progress
-    global attempted_move_list
     global moving_list
     global placed_list
 
     game_in_progress = True
 
     # Create 3 lists to hold all tetris blocks on the screen
-    attempted_move_list = pygame.sprite.Group()
     moving_list = pygame.sprite.Group()
     placed_list = pygame.sprite.Group()
 
@@ -277,7 +273,7 @@ btn_exit.show_button()
 clock = pygame.time.Clock()
 
 gravity_delay = pygame.USEREVENT + 1
-pygame.time.set_timer(pygame.USEREVENT + 1, 200)
+pygame.time.set_timer(pygame.USEREVENT + 1, 500)
 
 # random.seed(9879789)
 
