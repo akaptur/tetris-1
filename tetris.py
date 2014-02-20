@@ -1,6 +1,8 @@
-import os, sys, pygame, random
+import os, sys, pygame, random, weakref
 from pygame.locals import *
 from random import choice
+
+_id2obj_dict = weakref.WeakValueDictionary()
 
 pygame.init()
 
@@ -33,18 +35,25 @@ class Button:
         background.blit(self.buttonbg, self.location_xy)
         background.blit(self.text, self.textrect)
 
+class IterRegistry(type):
+    def __iter__(cls):
+        return iter(cls._registry)
+
 class Block(pygame.sprite.Sprite):
-    instances = []
+    __metaclass__ = IterRegistry
+    _registry = []
 
     # Initialise, move and stop a tetris block
     def __init__(self, color, width, height):
         # Track this instance
-        self.instances.append(self)
+        self._registry.append(self)
 
         pygame.sprite.Sprite.__init__(self) #call Sprite initializer
         self.image = pygame.Surface([width, height])
         self.image.fill(color)
         self.image.set_colorkey(white)
+        self.iMoved = False
+        self.stopped = False
 
         # Draw the ellipse
         pygame.draw.ellipse(self.image,color,[0,0,width,height])
@@ -54,36 +63,100 @@ class Block(pygame.sprite.Sprite):
         # by setting the values of rect.x and rect.y
         self.rect = self.image.get_rect()
 
-        self.stopped = False
+    def update(self, updateType, direction = ''):
+        if updateType == "checkCollide":
+            self.checkCollision()
+            self.checkIfEndOfScreen()
 
-    def update(self):
-        checkIfEndOfScreen(self)
-        checkCollision(self)
+        if updateType == "move":
+            if self.stopped != True:
+                # Move each block in the piece down one step
+                if direction == '':
+                    self.rect.y += 42
+                if direction == 'right':
+                    self.rect.x += 42
+                if direction == 'left':
+                    self.rect.x -= 42
 
-        print self.rect
-
-        if self.stopped != True and self in moving_list:
-            # Move block down by some pixels
-            self.rect.y += 42
+        if updateType == "neverMind":
+            if not self.iMoved:
+                self.rect.y -= 42
+                self.iMoved = True
+            self.stop()
 
     def rotate(self):
         pass
 
     def stop(self):
         self.stopped = True
+        for sprites in moving_list:
+            placed_list.add(sprites)
+        moving_list.empty()
 
-class Piece():
-    
+    def checkCollision(self):
+        col = pygame.sprite.spritecollideany(self, placed_list, False)
 
-def checkCollision(movingsprite):
-    # movingsprite.rect.y += 42
-    col = pygame.sprite.spritecollideany(movingsprite, placed_list, False)
-    # movingsprite.rect.y -= 42
-    if not col:
-        # If no collisions, we don't do anything
-        pass
-    else:
-        stop_object(movingsprite)
+        if not col:
+            # If no collisions, we don't do anything
+            pass
+        else:
+            moving_list.update("neverMind")
+
+    def checkIfEndOfScreen(self):
+        if self.rect.y >= (screen_height - block_size):
+            self.stop()
+
+class Piece(pygame.sprite.Group):
+    def __init__(self):
+        # Create list of blocks in piece
+        self.blocks = []
+
+        pygame.sprite.Group.__init__(self) #call Sprite initializer
+
+        # Create random new piece if there aren't any moving
+        chosenpiece = random.choice(pieces.keys())
+
+        thisshape = pieces[chosenpiece]['shape']
+        thiscolor = pieces[chosenpiece]['color']
+
+        # Create the first block
+        self.prep_new_block(0, 0, thiscolor)
+
+        # Manually define tbar shape
+        if chosenpiece == 'tbar':
+            self.prep_new_block(42, 0, thiscolor)
+            self.prep_new_block(84, 0, thiscolor)
+            self.prep_new_block(42, -42, thiscolor)
+        else:
+        # The other shapes can follow a ruleset from left to right
+            pos_x = 0
+            pos_y = 0
+
+            for char in thisshape:
+                if char == 'r': pos_x += 42
+                if char == 'u': pos_y -= 42
+                if char == 'd': pos_y += 42
+                if char == 'l': pos_x -= 42
+
+                self.prep_new_block(pos_x, pos_y, thiscolor)
+
+    def prep_new_block(self, x_adj, y_adj, color):
+        # Create tetris block (object)
+        block = Block(color, 42, 42)
+
+        # For each block in the piece, add to the list
+        self.blocks.append(block)
+
+        # Set block location
+        block.rect.x = ( edge_tetris / 2 ) - ( block_size / 2 ) + x_adj - block_size/2
+        block.rect.y = 0 + y_adj
+
+        # Add block to list
+        moving_list.add(block)
+
+    # def down_one_step(self):
+        # for blockobj in Block:
+            # blockobj.move_one_step()
 
 def stop_object(movingsprite):
     for instance in Block.instances:
@@ -94,60 +167,18 @@ def stop_object(movingsprite):
         moving_list.remove(instance)
         placed_list.add(instance)
 
-def checkIfEndOfScreen(movingsprite):
-    if movingsprite.rect.y >= (screen_height - block_size):
-        stop_object(movingsprite)
-
 def start_game():
     global game_in_progress
+    global attempted_move_list
     global moving_list
     global placed_list
 
     game_in_progress = True
 
-    # Create 2 lists to hold all tetris blocks on the screen
+    # Create 3 lists to hold all tetris blocks on the screen
+    attempted_move_list = pygame.sprite.Group()
     moving_list = pygame.sprite.Group()
     placed_list = pygame.sprite.Group()
-
-def new_piece(piecename):
-
-    thisname = piecename
-    thisshape = pieces[piecename]['shape']
-    thiscolor = pieces[piecename]['color']
-
-    # Create the first block
-    prep_new_block(0, 0, thiscolor)
-
-    # Manually define tbar shape
-    if thisname == 'tbar':
-        prep_new_block(42, 0, thiscolor)
-        prep_new_block(84, 0, thiscolor)
-        prep_new_block(42, -42, thiscolor)
-    else:
-    # The other shapes can follow a ruleset from left to right
-        pos_x = 0
-        pos_y = 0
-
-        for char in thisshape:
-            if char == 'r': pos_x += 42
-            if char == 'u': pos_y -= 42
-            if char == 'd': pos_y += 42
-            if char == 'l': pos_x -= 42
-
-            prep_new_block(pos_x, pos_y, thiscolor)
-
-
-
-def prep_new_block(x_adj, y_adj, color):
-    # Create tetris block (object)
-    block = Block(color, 42, 42)
-
-    # Set block location
-    block.rect.x = ( edge_tetris / 2 ) - ( block_size / 2 ) + x_adj
-    block.rect.y = 0 + y_adj
-
-    # Add block to list
-    moving_list.add(block)
 
 def add_tuples(a, b):
     # This function adds two tuples together, and returns their sum as the output (as if they were matrices)
@@ -208,6 +239,7 @@ block_size = 42
 
 # Global variables
 game_in_progress = False
+draw = True
 
 # Types of pieces
 pieces = {}
@@ -247,7 +279,7 @@ clock = pygame.time.Clock()
 gravity_delay = pygame.USEREVENT + 1
 pygame.time.set_timer(pygame.USEREVENT + 1, 200)
 
-random.seed(9879789)
+# random.seed(9879789)
 
 # Constant loop to check for events
 while 1:
@@ -268,20 +300,32 @@ while 1:
             if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
                 pygame.quit()
 
+        # Handle keyboard presses
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP: # UP Arrow
+                pass
+            if event.key == pygame.K_DOWN: # DOWN Arrow
+                pass
+            if event.key == pygame.K_RIGHT: # RIGHT Arrow
+                moving_list.update("move", "right")
+            if event.key == pygame.K_LEFT: # LEFT Arrow
+                moving_list.update("move", "left")
+
         if event.type == pygame.USEREVENT + 1:
             if game_in_progress == True:
-                moving_list.update()
-                print
+                draw = False
+                moving_list.update("move")
+                moving_list.update("checkCollide")
+                draw = True
 
     if game_in_progress:
         if not moving_list:
-            # Create random new piece if there aren't any moving
-            thepiece = random.choice(pieces.keys())
-            new_piece(thepiece)
+            # Create new piece
+            piece = Piece()
 
     # Draw everything
     screen.blit(background, (0, 0))
-    if game_in_progress == True:
+    if game_in_progress and draw:
         moving_list.draw(screen)
         placed_list.draw(screen)
     pygame.display.flip()
