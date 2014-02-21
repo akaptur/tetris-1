@@ -48,18 +48,22 @@ class Block(pygame.sprite.Sprite):
 
         pygame.sprite.Sprite.__init__(self) #call Sprite initializer
         self.image = pygame.Surface([width, height])
-        self.image.fill(color)
-        self.image.set_colorkey(white)
+        if type(color) == 'tuple':
+            self.image.fill(color)
+            self.image.set_colorkey(white)
+        else:
+            self.image, self.rect = load_image('yellow.bmp', -1)
         self.iMoved = False
         self.stopped = False
 
         # Draw the ellipse
-        pygame.draw.ellipse(self.image,color,[0,0,width,height])
+        if type(color) == 'tuple':
+            pygame.draw.ellipse(self.image,color,[0,0,width,height])
 
-        # Fetch the rectangle object that has the dimensions of the 
-        # image. The position of this object is updated
-        # by setting the values of rect.x and rect.y
-        self.rect = self.image.get_rect()
+            # Fetch the rectangle object that has the dimensions of the 
+            # image. The position of this object is updated
+            # by setting the values of rect.x and rect.y
+            self.rect = self.image.get_rect()
 
     def update(self, updateType, direction = ''):
         if updateType == "checkCollide":
@@ -242,7 +246,7 @@ pieces = {}
 pieces['long'] = { 'name': 'long', 'shape': 'rrr', 'color': (0, 175, 230) }
 pieces['cornerright'] = { 'name': 'cornerright', 'shape': 'drr', 'color': (10, 115, 185) }
 pieces['cornerleft'] = { 'name': 'cornerright', 'shape': 'rru', 'color': (250, 162, 57) }
-pieces['square'] = { 'name': 'square', 'shape': 'rdl', 'color': (225, 225, 25) }
+pieces['square'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
 pieces['zigleft'] = { 'name': 'zigleft', 'shape': 'rur', 'color': (0, 170, 80) }
 pieces['zigright'] = { 'name': 'zigright', 'shape': 'rdr', 'color': (210, 50, 40) }
 pieces['tbar'] = { 'name': 'tbar', 'shape': '', 'color': (130, 90, 160) }
