@@ -75,8 +75,10 @@ class Block(pygame.sprite.Sprite):
                     self.rect.y += 42
                 if direction == 'right':
                     self.rect.x += 42
+                    self.checkCollision('right')
                 if direction == 'left':
                     self.rect.x -= 42
+                    self.checkCollision('left')
 
         if updateType == "reverse":
             if direction == "left":
@@ -109,14 +111,16 @@ class Block(pygame.sprite.Sprite):
             placed_list.add(sprites)
         moving_list.empty()
 
-    def checkCollision(self):
+    def checkCollision(self, direction = ''):
         col = pygame.sprite.spritecollideany(self, placed_list, False)
 
         if not col:
             # If no collisions, we don't do anything
             pass
-        else:
+        elif direction == '':
             moving_list.update("moveBack")
+        elif direction == 'left' or direction == 'right':
+            moving_list.update("reverse", direction)
 
     def checkIfEndOfScreen(self):
         if self.rect.y >= (screen_height - block_size):
