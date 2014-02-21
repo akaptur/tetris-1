@@ -33,6 +33,7 @@ class Button:
         background.blit(self.buttonbg, self.location_xy)
         background.blit(self.text, self.textrect)
 
+
 class IterRegistry(type):
     def __iter__(cls):
         return iter(cls._registry)
@@ -48,22 +49,15 @@ class Block(pygame.sprite.Sprite):
 
         pygame.sprite.Sprite.__init__(self) #call Sprite initializer
         self.image = pygame.Surface([width, height])
-        if type(color) == 'tuple':
-            self.image.fill(color)
-            self.image.set_colorkey(white)
-        else:
-            self.image, self.rect = load_image('yellow.bmp', -1)
+
+        # Fetch the rectangle object that has the dimensions of the 
+        # image. The position of this object is updated
+        # by setting the values of rect.x and rect.y
+        self.image, self.rect = load_image(color + '.bmp', -1)
+
+        # Describe this!!!!!!
         self.iMoved = False
         self.stopped = False
-
-        # Draw the ellipse
-        if type(color) == 'tuple':
-            pygame.draw.ellipse(self.image,color,[0,0,width,height])
-
-            # Fetch the rectangle object that has the dimensions of the 
-            # image. The position of this object is updated
-            # by setting the values of rect.x and rect.y
-            self.rect = self.image.get_rect()
 
     def update(self, updateType, direction = ''):
         if updateType == "checkCollide":
@@ -71,6 +65,10 @@ class Block(pygame.sprite.Sprite):
             self.checkIfEndOfScreen()
 
         if updateType == "move":
+            # Ensure user does not move pieces outside of screen (left or right)
+            self.checkIfEndOfScreen()
+            self.checkEdges()
+
             if self.stopped != True:
                 # Move each block in the piece down one step
                 if direction == '':
@@ -80,11 +78,27 @@ class Block(pygame.sprite.Sprite):
                 if direction == 'left':
                     self.rect.x -= 42
 
-        if updateType == "neverMind":
+        if updateType == "reverse":
+            if direction == "left":
+                self.rect.x += 42
+            elif direction == "right":
+                self.rect.x -= 42
+
+        if updateType == "moveBack":
             if not self.iMoved:
                 self.rect.y -= 42
                 self.iMoved = True
-            self.stop()
+                self.stop()
+
+        if updateType == "checkEdges":
+            self.checkEdges()
+
+    def checkEdges(self):
+        for sprites in moving_list:
+            if sprites.rect.x < 0:
+                moving_list.update("reverse", "left")
+            if sprites.rect.x >= 420:
+                moving_list.update("reverse", "right")
 
     def rotate(self):
         pass
@@ -102,7 +116,7 @@ class Block(pygame.sprite.Sprite):
             # If no collisions, we don't do anything
             pass
         else:
-            moving_list.update("neverMind")
+            moving_list.update("moveBack")
 
     def checkIfEndOfScreen(self):
         if self.rect.y >= (screen_height - block_size):
@@ -159,6 +173,10 @@ class Piece(pygame.sprite.Group):
     # def down_one_step(self):
         # for blockobj in Block:
             # blockobj.move_one_step()
+
+def clear_bg():
+        background = pygame.image.load('assets/background.gif').convert()
+        screen.blit(background, (0, 0))
 
 def stop_object(movingsprite):
     for instance in Block.instances:
@@ -228,6 +246,10 @@ def load_sound(name):
         raise SystemExit, message
     return sound
 
+def move_piece_down():
+    moving_list.update("move")
+    moving_list.update("checkCollide")
+
 # Define dimensions
 edge_tetris = 420
 screen_width = 600
@@ -236,6 +258,7 @@ margin = 20
 button_height = 40
 button_text_size = 48
 block_size = 42
+paused = False
 
 # Global variables
 game_in_progress = False
@@ -243,13 +266,13 @@ draw = True
 
 # Types of pieces
 pieces = {}
-pieces['long'] = { 'name': 'long', 'shape': 'rrr', 'color': (0, 175, 230) }
-pieces['cornerright'] = { 'name': 'cornerright', 'shape': 'drr', 'color': (10, 115, 185) }
-pieces['cornerleft'] = { 'name': 'cornerright', 'shape': 'rru', 'color': (250, 162, 57) }
+pieces['long'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan' }
+pieces['cornerright'] = { 'name': 'cornerright', 'shape': 'drr', 'color': 'blue' }
+pieces['cornerleft'] = { 'name': 'cornerright', 'shape': 'rru', 'color': 'orange' }
 pieces['square'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
-pieces['zigleft'] = { 'name': 'zigleft', 'shape': 'rur', 'color': (0, 170, 80) }
-pieces['zigright'] = { 'name': 'zigright', 'shape': 'rdr', 'color': (210, 50, 40) }
-pieces['tbar'] = { 'name': 'tbar', 'shape': '', 'color': (130, 90, 160) }
+pieces['zigleft'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
+pieces['zigright'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
+pieces['tbar'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
 
 
 # Colours
@@ -267,6 +290,7 @@ background = pygame.image.load('assets/background.gif').convert()
 
 # Define action buttons
 btn_start = Button('Start', (edge_tetris+margin, 420))
+btn_pause = Button('Pause', (edge_tetris+margin, 420))
 btn_exit = Button('Exit', (edge_tetris+margin, 500))
 
 # Show action buttons
@@ -292,31 +316,45 @@ while 1:
         # handle mouse clicks
         if pygame.mouse.get_pressed()[0]:
 
-            # Start button
+            # Start/pause button
             if btn_start.rect.collidepoint(pygame.mouse.get_pos()):
-                start_game()
+
+                clear_bg()
+
+                if not game_in_progress:
+                    start_game()
+                    btn_pause.show_button()
+                elif paused:
+                    paused = False
+                    btn_pause.show_button()
+                else:
+                    paused = True
+                    btn_start.show_button()
+
 
             # Exit button
             if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
                 pygame.quit()
 
-        # Handle keyboard presses
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP: # UP Arrow
-                pass
-            if event.key == pygame.K_DOWN: # DOWN Arrow
-                pass
-            if event.key == pygame.K_RIGHT: # RIGHT Arrow
-                moving_list.update("move", "right")
-            if event.key == pygame.K_LEFT: # LEFT Arrow
-                moving_list.update("move", "left")
+        if not paused:
 
-        if event.type == pygame.USEREVENT + 1:
-            if game_in_progress == True:
-                draw = False
-                moving_list.update("move")
-                moving_list.update("checkCollide")
-                draw = True
+            # Handle keyboard presses
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP: # UP Arrow
+                    pass
+                if event.key == pygame.K_DOWN: # DOWN Arrow
+                    move_piece_down()
+                if event.key == pygame.K_RIGHT: # RIGHT Arrow
+                    moving_list.update("move", "right")
+                if event.key == pygame.K_LEFT: # LEFT Arrow
+                    moving_list.update("move", "left")
+
+            if event.type == pygame.USEREVENT + 1:
+                if game_in_progress == True:
+                    draw = False
+                    move_piece_down()
+                    moving_list.update("checkEdges")
+                    draw = True
 
     if game_in_progress:
         if not moving_list:
