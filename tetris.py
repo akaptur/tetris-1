@@ -315,6 +315,7 @@ paused = False
 game_in_progress = False
 draw = True
 
+# List of all the rows that blocks can be in (y axis)
 rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588]
 
 # Sounds
@@ -336,7 +337,6 @@ pieces['tbar'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
 
 # Colours
 black = (0,0,0)
-white = (255, 255, 255)
 lightblue = (150, 204, 255)
 
 # Size of window
