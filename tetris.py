@@ -426,7 +426,8 @@ while 1:
     if game_in_progress:
         all_placed_sprites = placed_list.sprites()
         for i in rows:
-            print i, len(placed_row[i])
+            # For debugging, see count of sprites in each row
+            # print i, len(placed_row[i])
             if len(placed_row[i]) == 10:
                 force_redraw()
                 clear_row(i)
