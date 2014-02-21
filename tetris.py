@@ -1,4 +1,4 @@
-import os, sys, pygame, random
+import os, sys, pygame, random, pdb
 from pygame.locals import *
 from random import choice
 
@@ -110,6 +110,7 @@ class Block(pygame.sprite.Sprite):
         pass
 
     def stop(self, placed = True):
+        placed_row[self.rect.y].add(self)
         self.stopped = True
         for sprite in moving_list:
             placed_list.add(sprite)
@@ -207,12 +208,15 @@ def clear_row(thisrow):
     placed_row[thisrow].empty()
 
     # Now shift all higher sprites down one row
-    for row in rows:
-        if row < thisrow:
-            for sprite in iter(placed_row[row]):
+    # We work through the rows in reverse order (from bottom to top, so we only move each sprite once)
+    rows_reverse = rows[::-1]
+
+    for row in rows_reverse:
+        for sprite in iter(placed_row[row]):
+            if sprite.rect.y != thisrow and sprite.rect.y < thisrow:
+                placed_row[sprite.rect.y].remove(sprite)
+                placed_row[sprite.rect.y + 42].add(sprite)
                 sprite.rect.y += 42
-                placed_row[row+42].add(sprite)
-                placed_row[row].remove(sprite)
 
 def start_game():
     global game_in_progress
@@ -290,6 +294,12 @@ def load_sound(name):
 def move_piece_down():
     moving_list.update("move")
     moving_list.update("checkCollide")
+
+def force_redraw():
+    screen.blit(background, (0, 0))
+    moving_list.draw(screen)
+    placed_list.draw(screen)
+    pygame.display.flip()
 
 # Define dimensions
 edge_tetris = 420
@@ -416,7 +426,9 @@ while 1:
     if game_in_progress:
         all_placed_sprites = placed_list.sprites()
         for i in rows:
+            print i, len(placed_row[i])
             if len(placed_row[i]) == 10:
+                force_redraw()
                 clear_row(i)
 
     # Draw everything
