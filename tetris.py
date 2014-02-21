@@ -94,7 +94,7 @@ class Block(pygame.sprite.Sprite):
             if not self.iMoved:
                 self.rect.y -= 42
                 self.iMoved = True
-                self.stop()
+                self.stop(False)
 
         if updateType == "checkEdges":
             self.checkEdges()
@@ -109,10 +109,13 @@ class Block(pygame.sprite.Sprite):
     def rotate(self):
         pass
 
-    def stop(self):
+    def stop(self, placed = True):
         self.stopped = True
-        for sprites in moving_list:
-            placed_list.add(sprites)
+        for sprite in moving_list:
+            placed_list.add(sprite)
+            # If the object is firmly placed (i.e. no collision), then we add it to the row group
+            if placed:
+                placed_row[sprite.rect.y].add(sprite)
         moving_list.empty()
 
     def checkCollision(self, direction = ''):
@@ -195,16 +198,38 @@ def stop_object(movingsprite):
         moving_list.remove(instance)
         placed_list.add(instance)
 
+def clear_row(thisrow):
+    # Remove all sprites in row from the placed list
+    for sprite in iter(placed_row[thisrow]):
+        placed_list.remove(sprite)
+
+    # And then clear this row
+    placed_row[thisrow].empty()
+
+    # Now shift all higher sprites down one row
+    for row in rows:
+        if row < thisrow:
+            for sprite in iter(placed_row[row]):
+                sprite.rect.y += 42
+                placed_row[row+42].add(sprite)
+                placed_row[row].remove(sprite)
+
 def start_game():
     global game_in_progress
     global moving_list
     global placed_list
+    global placed_row
 
     game_in_progress = True
 
     # Create 3 lists to hold all tetris blocks on the screen
     moving_list = pygame.sprite.Group()
     placed_list = pygame.sprite.Group()
+
+    # Create a sprite group for each of the rows we care about
+    placed_row = [pygame.sprite.Group()] * (588 + 1)
+    for i in rows:
+        placed_row[i] = pygame.sprite.Group()
 
     # Play music
     bgmusic.play(-1)
@@ -279,6 +304,8 @@ paused = False
 # Global variables
 game_in_progress = False
 draw = True
+
+rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588]
 
 # Sounds
 music = os.path.join('assets', 'music_a.wav')
@@ -378,7 +405,7 @@ while 1:
                     draw = False
                     move_piece_down()
                     moving_list.update("checkEdges")
-                    draw = True      
+                    draw = True
 
     if game_in_progress:
         if not moving_list:
@@ -388,9 +415,9 @@ while 1:
     # Check if 10 in a row
     if game_in_progress:
         all_placed_sprites = placed_list.sprites()
-        rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630]
-        cols = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420]
-
+        for i in rows:
+            if len(placed_row[i]) == 10:
+                clear_row(i)
 
     # Draw everything
     screen.blit(background, (0, 0))
