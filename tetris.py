@@ -87,6 +87,10 @@ class Block(pygame.sprite.Sprite):
                 self.rect.x -= 42
 
         if updateType == "moveBack":
+            # If a vertical collision happens on the top row, it's game over!
+            if self.rect.y == 0:
+                game_over()
+
             if not self.iMoved:
                 self.rect.y -= 42
                 self.iMoved = True
@@ -202,6 +206,13 @@ def start_game():
     moving_list = pygame.sprite.Group()
     placed_list = pygame.sprite.Group()
 
+    # Play music
+    bgmusic.play(-1)
+
+def game_over():
+    game_in_progress = False
+    bgmusic.stop()
+
 def add_tuples(a, b):
     # This function adds two tuples together, and returns their sum as the output (as if they were matrices)
     (ax, ay, aw, ah) = a
@@ -242,7 +253,8 @@ def load_sound(name):
         def play(self): pass
     if not pygame.mixer:
         return NoneSound()
-    fullname = os.path.join('data', name)
+    fullname = os.path.join('assets', name)
+    print fullname
     try:
         sound = pygame.mixer.Sound(fullname)
     except pygame.error, message:
@@ -267,6 +279,12 @@ paused = False
 # Global variables
 game_in_progress = False
 draw = True
+
+# Sounds
+music = os.path.join('assets', 'music_a.wav')
+pygame.mixer.init()
+bgmusic = pygame.mixer.music
+bgmusic.load(music)
 
 # Types of pieces
 pieces = {}
@@ -326,21 +344,23 @@ while 1:
 
                 clear_bg()
 
-                if not game_in_progress:
+                if game_in_progress == False:
                     start_game()
                     btn_pause.show_button()
                 elif paused:
                     paused = False
                     btn_pause.show_button()
+                    bgmusic.unpause()
                 else:
                     paused = True
                     btn_start.show_button()
+                    bgmusic.pause()
 
             # Exit button
             if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
                 pygame.quit()
 
-        if not paused:
+        if not paused and game_in_progress:
 
             # Handle keyboard presses
             if event.type == pygame.KEYDOWN:
@@ -370,7 +390,7 @@ while 1:
         all_placed_sprites = placed_list.sprites()
         rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630]
         cols = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420]
-                
+
 
     # Draw everything
     screen.blit(background, (0, 0))
