@@ -307,6 +307,7 @@ clock = pygame.time.Clock()
 gravity_delay = pygame.USEREVENT + 1
 pygame.time.set_timer(pygame.USEREVENT + 1, 500)
 
+# Force a seed (order of pieces), for debugging
 # random.seed(9879789)
 
 # Constant loop to check for events
@@ -335,7 +336,6 @@ while 1:
                     paused = True
                     btn_start.show_button()
 
-
             # Exit button
             if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
                 pygame.quit()
@@ -358,12 +358,19 @@ while 1:
                     draw = False
                     move_piece_down()
                     moving_list.update("checkEdges")
-                    draw = True
+                    draw = True      
 
     if game_in_progress:
         if not moving_list:
             # Create new piece
             piece = Piece()
+
+    # Check if 10 in a row
+    if game_in_progress:
+        all_placed_sprites = placed_list.sprites()
+        rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630]
+        cols = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420]
+                
 
     # Draw everything
     screen.blit(background, (0, 0))
