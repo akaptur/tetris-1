@@ -6,6 +6,7 @@ from random import choice
 global game_in_progress
 global paused
 global game_over_var
+global piece
 
 pygame.init()
 
@@ -59,85 +60,6 @@ class Block(pygame.sprite.Sprite):
         # by setting the values of rect.x and rect.y
         self.image, self.rect = load_image(color + '.bmp', -1)
 
-        # Describe this!!!!!!
-        self.iMoved = False
-        self.stopped = False
-
-    def update(self, updateType, direction = ''):
-        if updateType == "checkCollide":
-            self.checkCollision()
-            self.checkIfEndOfScreen()
-
-        if updateType == "move":
-            # Ensure user does not move pieces outside of screen (left or right)
-            self.checkIfEndOfScreen()
-            self.checkEdges()
-
-            if self.stopped != True:
-                # Move each block in the piece down one step
-                if direction == '':
-                    self.rect.y += 42
-                if direction == 'right':
-                    self.rect.x += 42
-                    self.checkCollision('right')
-                if direction == 'left':
-                    self.rect.x -= 42
-                    self.checkCollision('left')
-
-        if updateType == "reverse":
-            if direction == "left":
-                self.rect.x += 42
-            elif direction == "right":
-                self.rect.x -= 42
-
-        if updateType == "moveBack":
-            # If a vertical collision happens on the top row, it's game over!
-            if self.rect.y <= 42:
-                game_over()
-
-            if not self.iMoved:
-                self.rect.y -= 42
-                self.iMoved = True
-                self.stop(False)
-
-        if updateType == "checkEdges":
-            self.checkEdges()
-
-    def checkEdges(self):
-        for sprites in moving_list:
-            if sprites.rect.x < 0:
-                moving_list.update("reverse", "left")
-            if sprites.rect.x >= 420:
-                moving_list.update("reverse", "right")
-
-    def rotate(self):
-        pass
-
-    def stop(self, placed = True):
-        placed_row[self.rect.y].add(self)
-        self.stopped = True
-        for sprite in moving_list:
-            placed_list.add(sprite)
-            # If the object is firmly placed (i.e. no collision), then we add it to the row group
-            if placed:
-                placed_row[sprite.rect.y].add(sprite)
-        moving_list.empty()
-
-    def checkCollision(self, direction = ''):
-        col = pygame.sprite.spritecollideany(self, placed_list, False)
-
-        if not col:
-            # If no collisions, we don't do anything
-            pass
-        elif direction == '':
-            moving_list.update("moveBack")
-        elif direction == 'left' or direction == 'right':
-            moving_list.update("reverse", direction)
-
-    def checkIfEndOfScreen(self):
-        if self.rect.y >= (screen_height - block_size):
-            self.stop()
-
 class Piece(pygame.sprite.Group):
     def __init__(self):
         # Create list of blocks in piece
@@ -186,9 +108,80 @@ class Piece(pygame.sprite.Group):
         # Add block to list
         moving_list.add(block)
 
-    # def down_one_step(self):
-        # for blockobj in Block:
-            # blockobj.move_one_step()
+    def update(self, updateType, direction = ''):
+        if updateType == "move":
+
+            for sprite in moving_list:
+                if direction == '':
+                    sprite.rect.y += 42
+                if direction == 'right':
+                    sprite.rect.x += 42
+                if direction == 'left':
+                    sprite.rect.x -= 42
+
+            self.checkCollide(direction)
+
+        if updateType == "moveBack":
+            for sprite in moving_list:
+                # If a vertical collision happens on the top row, it's game over!
+                if sprite.rect.y <= 42:
+                    game_over()
+
+                # Otherwise, bump it up one
+                sprite.rect.y -= 42
+
+        if updateType == "reverse":
+            for sprite in moving_list:
+                if direction == "left":
+                    sprite.rect.x += 42
+                elif direction == "right":
+                    sprite.rect.x -= 42
+
+        if updateType == 'checkEdges':
+            for sprite in moving_list:
+                if sprite.rect.x < 0:
+                    self.update("reverse", "left")
+                if sprite.rect.x >= 420:
+                    self.update("reverse", "right")
+
+    def checkCollide(self, direction):
+            self.checkCollision(direction)
+            self.checkIfEndOfScreen()
+            self.update('checkEdges')
+
+    def checkIfEndOfScreen(self):
+        for sprite in moving_list:
+            if sprite.rect.y >= (screen_height - block_size):
+                self.stop()
+
+    def checkCollision(self, direction = ''):
+        col = None
+
+        col = pygame.sprite.groupcollide(moving_list, placed_list, False, False)
+
+        if not col:
+            pass
+
+        elif direction == '':
+            self.update("moveBack")
+
+        elif direction == 'left' or direction == 'right':
+            self.update("reverse", direction)
+
+        if col:
+            self.stop()
+
+    def stop(self):
+        for sprite in moving_list:
+            placed_list.add(sprite)
+
+            # Add it to the row group
+            placed_row[sprite.rect.y].add(sprite)
+         
+        moving_list.empty()
+
+    def rotate(self):
+        pass
 
 def clear_bg():
         background = pygame.image.load('assets/background.gif').convert()
@@ -335,8 +328,7 @@ def load_sound(name):
     return sound
 
 def move_piece_down():
-    moving_list.update("move")
-    moving_list.update("checkCollide")
+    piece.update("move")
 
 def force_redraw():
     screen.blit(background, (0, 0))
@@ -351,7 +343,7 @@ def main():
     global edge_tetris, screen_width, screen_height, margin, button_height, button_text_size, block_size
     global game_in_progress, paused, game_over_var, draw, allows_clicks
     global rows, bgmusic, music, pieces, black, lightblue, screen, background, foreground, transparent, basicFont
-    global btn_start, btn_exit, btn_pause, btn_restart
+    global btn_start, btn_exit, btn_pause, btn_restart, piece
 
     # Define dimensions
     edge_tetris = 420
@@ -477,19 +469,18 @@ def main():
                 # Handle keyboard presses
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP: # UP Arrow
-                        pass
+                        piece.rotate()
                     if event.key == pygame.K_DOWN: # DOWN Arrow
                         move_piece_down()
                     if event.key == pygame.K_RIGHT: # RIGHT Arrow
-                        moving_list.update("move", "right")
+                        piece.update("move", "right")
                     if event.key == pygame.K_LEFT: # LEFT Arrow
-                        moving_list.update("move", "left")
+                        piece.update("move", "left")
 
                 if event.type == pygame.USEREVENT + 1:
                     if game_in_progress == True:
                         draw = False
                         move_piece_down()
-                        moving_list.update("checkEdges")
                         draw = True
 
             if event.type == pygame.USEREVENT + 2:
