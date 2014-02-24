@@ -218,6 +218,32 @@ def clear_row(thisrow):
     for row in rows_reverse:
         for sprite in iter(placed_row[row]):
             if sprite.rect.y != thisrow and sprite.rect.y < thisrow:
+                # Animate!
+                # Create a surface for the animation
+                animate_surface = None
+                animate_surface = pygame.Surface(screen.get_size())
+                animate_surface.fill(transparent)
+                animate_surface.set_colorkey(transparent)
+
+                # Load the images
+                flash1 = pygame.image.load("assets/flash1.bmp")
+                flash2 = pygame.image.load("assets/flash2.bmp")
+                flash1rect = flash1.get_rect()
+                flash2rect = flash2.get_rect()
+
+                # Position the images
+                flash1rect.y, flash2rect.y = thisrow, thisrow
+
+                # Show the animation
+                animate_surface.blit(flash1, flash1rect)
+                screen.blit(animate_surface, (0, 0))
+                pygame.display.flip()
+                pygame.time.wait(15)
+                animate_surface.blit(flash2, flash2rect)
+                screen.blit(animate_surface, (0, 0))
+                pygame.display.flip()
+                pygame.time.wait(15)
+
                 placed_row[sprite.rect.y].remove(sprite)
                 placed_row[sprite.rect.y + 42].add(sprite)
                 sprite.rect.y += 42
@@ -324,7 +350,7 @@ def restart():
 def main():
     global edge_tetris, screen_width, screen_height, margin, button_height, button_text_size, block_size
     global game_in_progress, paused, game_over_var, draw, allows_clicks
-    global rows, bgmusic, music, pieces, black, lightblue, screen, background, foreground, basicFont
+    global rows, bgmusic, music, pieces, black, lightblue, screen, background, foreground, transparent, basicFont
     global btn_start, btn_exit, btn_pause, btn_restart
 
     # Define dimensions
@@ -376,10 +402,10 @@ def main():
     background = pygame.image.load('assets/background.gif').convert()
 
     # Set foreground image
-    foreground, TRANSPARENT = None, (1, 2, 3)
+    foreground, transparent = None, (1, 2, 3)
     foreground = pygame.Surface(screen.get_size())
-    foreground.fill(TRANSPARENT)
-    foreground.set_colorkey(TRANSPARENT)
+    foreground.fill(transparent)
+    foreground.set_colorkey(transparent)
 
     # Set fonts
     basicFont = pygame.font.SysFont(None, button_text_size)
