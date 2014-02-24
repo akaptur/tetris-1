@@ -2,6 +2,11 @@ import os, sys, pygame, random, pdb
 from pygame.locals import *
 from random import choice
 
+# Global variables that need to be declared early (e.g. used in game loop)
+global game_in_progress
+global paused
+global game_over_var
+
 pygame.init()
 
 class Button:
@@ -21,7 +26,6 @@ class Button:
         self.rect = pygame.Rect(add_tuples(self.rect, (self.location_xy[0], self.location_xy[1], 0, 0)))    
 
         # add the text
-        basicFont = pygame.font.SysFont(None, button_text_size)
         self.text = basicFont.render(self.text, True, black)
         self.textrect = self.text.get_rect()
 
@@ -88,7 +92,7 @@ class Block(pygame.sprite.Sprite):
 
         if updateType == "moveBack":
             # If a vertical collision happens on the top row, it's game over!
-            if self.rect.y == 0:
+            if self.rect.y <= 42:
                 game_over()
 
             if not self.iMoved:
@@ -219,10 +223,10 @@ def clear_row(thisrow):
                 sprite.rect.y += 42
 
 def start_game():
-    global game_in_progress
     global moving_list
     global placed_list
     global placed_row
+    global game_in_progress
 
     game_in_progress = True
 
@@ -239,8 +243,21 @@ def start_game():
     bgmusic.play(-1)
 
 def game_over():
+    global game_in_progress, text, game_over_var, foreground
     game_in_progress = False
+    game_over_var = True
     bgmusic.stop()
+
+    text = "GAME OVER!"
+    text = basicFont.render(text, True, black)
+    textpos = text.get_rect()
+    textpos.centerx = background.get_rect().centerx
+    textpos.centery = background.get_rect().centery
+    foreground.blit(text, textpos)
+
+    # Show start over button
+    btn_restart.show_button()
+
 
 def add_tuples(a, b):
     # This function adds two tuples together, and returns their sum as the output (as if they were matrices)
@@ -301,140 +318,182 @@ def force_redraw():
     placed_list.draw(screen)
     pygame.display.flip()
 
-# Define dimensions
-edge_tetris = 420
-screen_width = 600
-screen_height = 630
-margin = 20
-button_height = 40
-button_text_size = 48
-block_size = 42
-paused = False
+def restart():
+    main()
 
-# Global variables
-game_in_progress = False
-draw = True
+def main():
+    global edge_tetris, screen_width, screen_height, margin, button_height, button_text_size, block_size
+    global game_in_progress, paused, game_over_var, draw, allows_clicks
+    global rows, bgmusic, music, pieces, black, lightblue, screen, background, foreground, basicFont
+    global btn_start, btn_exit, btn_pause, btn_restart
 
-# List of all the rows that blocks can be in (y axis)
-rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588]
+    # Define dimensions
+    edge_tetris = 420
+    screen_width = 600
+    screen_height = 630
+    margin = 20
+    button_height = 40
+    button_text_size = 48
+    block_size = 42
 
-# Sounds
-music = os.path.join('assets', 'music_a.wav')
-pygame.mixer.init()
-bgmusic = pygame.mixer.music
-bgmusic.load(music)
+    # Global variables
+    game_in_progress = False
+    paused = False
+    game_over_var = False
+    draw = True
+    allows_clicks = True
 
-# Types of pieces
-pieces = {}
-pieces['long'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan' }
-pieces['cornerright'] = { 'name': 'cornerright', 'shape': 'drr', 'color': 'blue' }
-pieces['cornerleft'] = { 'name': 'cornerright', 'shape': 'rru', 'color': 'orange' }
-pieces['square'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
-pieces['zigleft'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
-pieces['zigright'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
-pieces['tbar'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
+    # List of all the rows that blocks can be in (y axis)
+    rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588]
+
+    # Sounds
+    music = os.path.join('assets', 'music_a.wav')
+    pygame.mixer.init()
+    bgmusic = pygame.mixer.music
+    bgmusic.load(music)
+
+    # Types of pieces
+    pieces = {}
+    pieces['long'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan' }
+    pieces['cornerright'] = { 'name': 'cornerright', 'shape': 'drr', 'color': 'blue' }
+    pieces['cornerleft'] = { 'name': 'cornerright', 'shape': 'rru', 'color': 'orange' }
+    pieces['square'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
+    pieces['zigleft'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
+    pieces['zigright'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
+    pieces['tbar'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
 
 
-# Colours
-black = (0,0,0)
-lightblue = (150, 204, 255)
+    # Colours
+    black = (0,0,0)
+    lightblue = (150, 204, 255)
 
-# Size of window
-size = width, height = screen_width, screen_height
-screen = pygame.display.set_mode(size)
-pygame.display.set_caption('Tetris')
+    # Size of window
+    size = width, height = screen_width, screen_height
+    screen = pygame.display.set_mode(size)
+    pygame.display.set_caption('Tetris')
 
-# Set background image
-background = pygame.image.load('assets/background.gif').convert()
+    # Set background image
+    background = pygame.image.load('assets/background.gif').convert()
 
-# Define action buttons
-btn_start = Button('Start', (edge_tetris+margin, 420))
-btn_pause = Button('Pause', (edge_tetris+margin, 420))
-btn_exit = Button('Exit', (edge_tetris+margin, 500))
+    # Set foreground image
+    foreground, TRANSPARENT = None, (1, 2, 3)
+    foreground = pygame.Surface(screen.get_size())
+    foreground.fill(TRANSPARENT)
+    foreground.set_colorkey(TRANSPARENT)
 
-# Show action buttons
-btn_start.show_button()
-btn_exit.show_button()
+    # Set fonts
+    basicFont = pygame.font.SysFont(None, button_text_size)
 
-# Define clock
-clock = pygame.time.Clock()
+    # Define action buttons
+    btn_start = Button('Start', (edge_tetris+margin, 420))
+    btn_pause = Button('Pause', (edge_tetris+margin, 420))
+    btn_exit = Button('Exit', (edge_tetris+margin, 500))
+    btn_restart = Button('Restart', (edge_tetris+margin, 420))
 
-gravity_delay = pygame.USEREVENT + 1
-pygame.time.set_timer(pygame.USEREVENT + 1, 500)
+    # Show action buttons
+    btn_start.show_button()
+    btn_exit.show_button()
 
-# Force a seed (order of pieces), for debugging
-# random.seed(9879789)
+    # Define clock
+    clock = pygame.time.Clock()
 
-# Constant loop to check for events
-while 1:
-    # Ensure game does not run faster than 60 frames/second
-    clock.tick(60)
+    gravity_delay = pygame.USEREVENT + 1
+    pygame.time.set_timer(pygame.USEREVENT + 1, 500)
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT: sys.exit()
+    # Force a seed (order of pieces), for debugging
+    # random.seed(9879789)
 
-        # handle mouse clicks
-        if pygame.mouse.get_pressed()[0]:
+    # Constant loop to check for events
+    while 1:
+        # Ensure game does not run faster than 60 frames/second
+        clock.tick(60)
 
-            # Start/pause button
-            if btn_start.rect.collidepoint(pygame.mouse.get_pos()):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: sys.exit()
 
-                clear_bg()
+            # handle mouse clicks
+            if pygame.mouse.get_pressed()[0] and allows_clicks:
 
-                if game_in_progress == False:
-                    start_game()
-                    btn_pause.show_button()
-                elif paused:
-                    paused = False
-                    btn_pause.show_button()
-                    bgmusic.unpause()
-                else:
-                    paused = True
-                    btn_start.show_button()
-                    bgmusic.pause()
+                # Prevent multiple clicks
+                allows_clicks = False
+                pygame.time.set_timer(pygame.USEREVENT + 2, 300)
 
-            # Exit button
-            if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.quit()
+                # Start/pause button
+                if btn_start.rect.collidepoint(pygame.mouse.get_pos()):
 
-        if not paused and game_in_progress:
+                    clear_bg()
 
-            # Handle keyboard presses
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP: # UP Arrow
-                    pass
-                if event.key == pygame.K_DOWN: # DOWN Arrow
-                    move_piece_down()
-                if event.key == pygame.K_RIGHT: # RIGHT Arrow
-                    moving_list.update("move", "right")
-                if event.key == pygame.K_LEFT: # LEFT Arrow
-                    moving_list.update("move", "left")
+                    if game_in_progress == False:
+                        # If game over, restart the game
+                        if game_over_var:
+                            restart()
 
-            if event.type == pygame.USEREVENT + 1:
-                if game_in_progress == True:
-                    draw = False
-                    move_piece_down()
-                    moving_list.update("checkEdges")
-                    draw = True
+                        # Otherwise, just start
+                        start_game()
+                        btn_pause.show_button()
+                    elif paused:
+                        paused = False
+                        btn_pause.show_button()
+                        bgmusic.unpause()
+                    elif game_over_var:
+                        restart()
+                    else:
+                        paused = True
+                        btn_start.show_button()
+                        bgmusic.pause()
 
-    if game_in_progress:
-        if not moving_list:
-            # Create new piece
-            piece = Piece()
+                # Exit button
+                if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
+                    pygame.quit()
 
-    # Check if 10 in a row
-    if game_in_progress:
-        all_placed_sprites = placed_list.sprites()
-        for i in rows:
-            # For debugging, see count of sprites in each row
-            # print i, len(placed_row[i])
-            if len(placed_row[i]) == 10:
-                force_redraw()
-                clear_row(i)
+            if not paused and game_in_progress:
 
-    # Draw everything
-    screen.blit(background, (0, 0))
-    if game_in_progress and draw:
-        moving_list.draw(screen)
-        placed_list.draw(screen)
-    pygame.display.flip()
+                # Handle keyboard presses
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP: # UP Arrow
+                        pass
+                    if event.key == pygame.K_DOWN: # DOWN Arrow
+                        move_piece_down()
+                    if event.key == pygame.K_RIGHT: # RIGHT Arrow
+                        moving_list.update("move", "right")
+                    if event.key == pygame.K_LEFT: # LEFT Arrow
+                        moving_list.update("move", "left")
+
+                if event.type == pygame.USEREVENT + 1:
+                    if game_in_progress == True:
+                        draw = False
+                        move_piece_down()
+                        moving_list.update("checkEdges")
+                        draw = True
+
+            if event.type == pygame.USEREVENT + 2:
+                    allows_clicks = True      
+
+        if game_in_progress:
+            if not moving_list:
+                # Create new piece
+                piece = Piece()
+
+        # Check if 10 in a row
+        if game_in_progress:
+            all_placed_sprites = placed_list.sprites()
+            for i in rows:
+                # For debugging, see count of sprites in each row
+                # print i, len(placed_row[i])
+                if len(placed_row[i]) == 10:
+                    force_redraw()
+                    clear_row(i)
+
+        # Draw everything
+        screen.blit(background, (0, 0))
+        if game_in_progress and draw:
+            moving_list.draw(screen)
+            placed_list.draw(screen)
+
+        if game_over_var:
+            screen.blit(foreground, (0, 0))
+
+        pygame.display.flip()
+
+if __name__ == "__main__":
+    main()
