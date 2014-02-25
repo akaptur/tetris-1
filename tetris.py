@@ -86,9 +86,10 @@ class Piece(pygame.sprite.Group):
 
         # Adjust the positions to be correct
         # First, we adjust for height (y)
+        n_pos_x = { }
         n_pos_y = []
         for sprite in moving_list:
-            n_pos_x.append(sprite.rect.x)
+            n_pos_x[sprite.rect.x] = 1
             n_pos_y.append(sprite.rect.y)
 
         y_difference = pos_y - max(n_pos_y)
@@ -100,12 +101,8 @@ class Piece(pygame.sprite.Group):
         # Next, we adjust for horizontal placement (x)
         pos_x = round_down(pos_x)
 
-        n_x_list = { }
-        for sprite in moving_list:
-                n_x_list[sprite.rect.x] = 1
-
         # Get unique values of x
-        n_x_values = n_x_list.keys()
+        n_x_values = n_pos_x.keys()
 
         x_mid = ( max(n_x_values) + min(n_x_values) ) / 2
 
