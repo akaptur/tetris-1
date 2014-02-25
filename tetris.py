@@ -3,9 +3,85 @@ from pygame.locals import *
 from random import choice
 
 # Global variables that need to be declared early (e.g. used in game loop)
-global game_in_progress, paused, game_over_var, piece
+global piece
 
 pygame.init()
+
+class Game():
+    def __init__(self):
+        # Define dimensions
+        self.edge_tetris = 420
+        self.screen_width = 600
+        self.screen_height = 756
+        self.margin = 20
+        self.button_height = 40
+        self.button_text_size = 48
+        self.block_size = 42
+
+        # State of the game
+        self.draw = True
+        self.allows_clicks = True
+        self.game_in_progress = False
+        self.paused = False
+        self.game_over_var = False
+
+        # List of all the rows that blocks can be in (y axis)
+        self.rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
+
+        self.animate_row = { }
+        for i in self.rows:
+            self.animate_row.update({i: ''})
+        self.row_cleared = False
+
+        # Sounds
+        self.music = os.path.join('assets', 'music_a.wav')
+        pygame.mixer.init()
+        self.bgmusic = pygame.mixer.music
+        self.bgmusic.load(self.music)
+
+        # Types of pieces
+        self.pieces = {}
+        self.pieces['long'] = { 'name': 'long', 'color': 'cyan', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (0, 84) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (0, 84) ) }
+        self.pieces['cornerright'] = { 'name': 'cornerright', 'color': 'blue', 'rotation_1' : ( (42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (-42, -42), (-42, 0), (-42, 42), (0, 42) ), 'rotation_3' : ( (-42, -42), (-42, 0), (42, -42), (0, -42) ), 'rotation_4' : ( (0, -42), (42, -42), (42, 0), (42, 42) ) }
+        self.pieces['cornerleft'] = { 'name': 'cornerleft', 'color': 'orange', 'rotation_1' : ( (-42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (0, -42), (42, -42) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (42, 42) ), 'rotation_4' : ( (-42, 42), (0, 42), (0, 0), (0, -42) ) }
+        self.pieces['square'] = { 'name': 'square', 'color': 'yellow', 'rotation_1' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_3' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (42, -42), (42, 0) ) }
+        self.pieces['zigleft'] = { 'name': 'zigleft', 'color': 'green', 'rotation_1' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (42, 0), (42, 42) ), 'rotation_3' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_4' : ( (0, -42), (0, 0), (42, 0), (42, 42) ) }
+        self.pieces['zigright'] = { 'name': 'zigright', 'color': 'red', 'rotation_1' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (42, 0), (42, -42) ), 'rotation_3' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_4' : ( (0, 42), (0, 0), (42, 0), (42, -42) ) }
+        self.pieces['tbar'] = { 'name': 'tbar', 'color': 'purple', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (0, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (42, 0) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (0, 42) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (-42, 0) ) }
+
+    def start_game(self):
+        self.game_in_progress = True
+
+        # Create 2 lists to hold all tetris blocks on the screen
+        self.moving_list = pygame.sprite.Group()
+        self.placed_list = pygame.sprite.Group()
+
+        # Create a sprite group for each of the rows we care about
+        self.placed_row = [pygame.sprite.Group()] * (714 + 1)
+        for i in game.rows:
+            game.placed_row[i] = pygame.sprite.Group()
+
+        # Play music
+        game.bgmusic.play(-1)
+
+    def restart(self):
+        main()
+
+    def game_over(self):
+        global text, foreground
+        self.game_in_progress = False
+        self.game_over_var = True
+        self.bgmusic.stop()
+
+        text = "GAME OVER!"
+        text = basicFont.render(text, True, black)
+        textpos = text.get_rect()
+        textpos.centerx = background.get_rect().centerx
+        textpos.centery = background.get_rect().centery
+        foreground.blit(text, textpos)
+
+        # Show start over button
+        btn_restart.show_button()
 
 class Button:
     # On-screen button, with optional text on top of it
@@ -15,7 +91,7 @@ class Button:
         self.location_xy = location_xy
 
         # create the button object
-        self.buttonbg = pygame.Surface([screen_width-edge_tetris-2*margin, button_height])
+        self.buttonbg = pygame.Surface([game.screen_width-game.edge_tetris-2*game.margin, game.button_height])
         self.buttonbg.fill(lightblue)
 
         # get the rectangle for the whole button
@@ -27,8 +103,8 @@ class Button:
         self.textrect = self.text.get_rect()
 
         # position the button text so it is in the center of the button object
-        self.textrect.centerx = (screen_width+edge_tetris) / 2
-        self.textrect.centery = self.location_xy[1] + button_height / 2
+        self.textrect.centerx = (game.screen_width+game.edge_tetris) / 2
+        self.textrect.centery = self.location_xy[1] + game.button_height / 2
 
     def show_button(self):
         background.blit(self.buttonbg, self.location_xy)
@@ -67,10 +143,10 @@ class Piece(pygame.sprite.Group):
 
         # Create random new piece if there aren't any moving
         if self.chosenpiece == '':
-            self.chosenpiece = random.choice(pieces.keys())
+            self.chosenpiece = random.choice(game.pieces.keys())
 
-        thisrotation = pieces[self.chosenpiece]['rotation' + "_" + str(self.rotation)]
-        thiscolor = pieces[self.chosenpiece]['color']
+        thisrotation = game.pieces[self.chosenpiece]['rotation' + "_" + str(self.rotation)]
+        thiscolor = game.pieces[self.chosenpiece]['color']
 
         # Create pieces according to their specs
         for x, y in thisrotation:
@@ -80,14 +156,14 @@ class Piece(pygame.sprite.Group):
         # First, we adjust for height (y)
         n_pos_x = { }
         n_pos_y = []
-        for sprite in moving_list:
+        for sprite in game.moving_list:
             n_pos_x[sprite.rect.x] = 1
             n_pos_y.append(sprite.rect.y)
 
         y_difference = pos_y - max(n_pos_y)
 
         if y_difference > 0:
-            for sprite in moving_list:
+            for sprite in game.moving_list:
                 sprite.rect.y += y_difference
 
         # Next, we adjust for horizontal placement (x)
@@ -103,19 +179,19 @@ class Piece(pygame.sprite.Group):
 
         # Finally, make the adjustments, also double check if over an edge
         f_pos_x = []
-        for sprite in moving_list:
+        for sprite in game.moving_list:
             new_x = sprite.rect.x + x_difference
             sprite.rect.x = new_x
             f_pos_x.append(new_x)
 
         # Check if over left edge
         if min(f_pos_x) < 0:
-            for sprite in moving_list:
+            for sprite in game.moving_list:
                 sprite.rect.x += -min(f_pos_x)
 
         # Check if over right edge
         if max(f_pos_x) >= 420:
-            for sprite in moving_list:
+            for sprite in game.moving_list:
                 sprite.rect.x -= 42
 
     def prep_new_block(self, x_adj, y_adj, color):
@@ -123,16 +199,16 @@ class Piece(pygame.sprite.Group):
         block = Block(color, 42, 42)
 
         # Set block location
-        block.rect.x = ( edge_tetris / 2 ) - ( block_size / 2 ) + x_adj - block_size/2
+        block.rect.x = ( game.edge_tetris / 2 ) - ( game.block_size / 2 ) + x_adj - game.block_size/2
         block.rect.y = 0 + y_adj
 
         # Add block to list
-        moving_list.add(block)
+        game.moving_list.add(block)
 
     def update(self, updateType, direction = ''):
         if updateType == "move":
 
-            for sprite in moving_list:
+            for sprite in game.moving_list:
                 if direction == '':
                     sprite.rect.y += 42
                 if direction == 'right':
@@ -143,23 +219,23 @@ class Piece(pygame.sprite.Group):
             self.checkCollide(direction)
 
         if updateType == "moveBack":
-            for sprite in moving_list:
+            for sprite in game.moving_list:
                 # If a vertical collision happens on the top row, it's game over!
                 if sprite.rect.y <= 42:
-                    game_over()
+                    game.game_over()
 
                 # Otherwise, bump it up one
                 sprite.rect.y -= 42
 
         if updateType == "reverse":
-            for sprite in moving_list:
+            for sprite in game.moving_list:
                 if direction == "left":
                     sprite.rect.x += 42
                 elif direction == "right":
                     sprite.rect.x -= 42
 
         if updateType == 'checkEdges':
-            for sprite in moving_list:
+            for sprite in game.moving_list:
                 if sprite.rect.x < 0:
                     self.update("reverse", "left")
                 if sprite.rect.x >= 420:
@@ -171,13 +247,13 @@ class Piece(pygame.sprite.Group):
             self.update('checkEdges')
 
     def checkIfEndOfScreen(self):
-        for sprite in moving_list:
-            if sprite.rect.y >= (screen_height - block_size):
+        for sprite in game.moving_list:
+            if sprite.rect.y >= (game.screen_height - game.block_size):
                 self.stop()
 
     def checkCollision(self, direction = ''):
         col = None
-        col = pygame.sprite.groupcollide(moving_list, placed_list, False, False)
+        col = pygame.sprite.groupcollide(game.moving_list, game.placed_list, False, False)
 
         if not col:
             pass
@@ -190,13 +266,13 @@ class Piece(pygame.sprite.Group):
             self.update("reverse", direction)
 
     def stop(self):
-        for sprite in moving_list:
-            placed_list.add(sprite)
+        for sprite in game.moving_list:
+            game.placed_list.add(sprite)
 
             # Add it to the row group
-            placed_row[sprite.rect.y].add(sprite)
+            game.placed_row[sprite.rect.y].add(sprite)
          
-        moving_list.empty()
+        game.moving_list.empty()
 
     def rotate(self):
         # Rotation will be achieved by deleting the current piece, and creating a new one rotated 90 degrees
@@ -204,7 +280,7 @@ class Piece(pygame.sprite.Group):
         # First, get x and y coordinates of all blocks in piece
         y_list = []
         x_list = { }
-        for sprite in moving_list:
+        for sprite in game.moving_list:
             x_list[sprite.rect.x] = 1
             y_list.append(sprite.rect.y)
 
@@ -217,7 +293,7 @@ class Piece(pygame.sprite.Group):
         x_mid = ( max(x_values) + min(x_values) ) / 2
 
         # Now delete the existing piece, and check the current rotation
-        moving_list.empty()
+        game.moving_list.empty()
 
         if self.rotation <= 3:
             self.rotation += 1
@@ -233,29 +309,29 @@ def stop_object(movingsprite):
         instance.stop()
 
         # Move all sprites from the moving group to the placed group
-        moving_list.remove(instance)
-        placed_list.add(instance)
+        game.moving_list.remove(instance)
+        game.placed_list.add(instance)
 
 def clear_row(thisrow):
     # Remove all sprites in row from the placed list
-    for sprite in iter(placed_row[thisrow]):
-        placed_list.remove(sprite)
+    for sprite in iter(game.placed_row[thisrow]):
+        game.placed_list.remove(sprite)
 
     # Create a surface for the animation
-        animate_row.update( { thisrow : '1' } )
+        game.animate_row.update( { thisrow : '1' } )
 
     # And then clear this row
-    placed_row[thisrow].empty()
+    game.placed_row[thisrow].empty()
 
     # Now shift all higher sprites down one row
     # We work through the rows in reverse order (from bottom to top, so we only move each sprite once)
-    rows_reverse = rows[::-1]
+    rows_reverse = game.rows[::-1]
 
     for row in rows_reverse:
-        for sprite in iter(placed_row[row]):
+        for sprite in iter(game.placed_row[row]):
             if sprite.rect.y != thisrow and sprite.rect.y < thisrow:
-                placed_row[sprite.rect.y].remove(sprite)
-                placed_row[sprite.rect.y + 42].add(sprite)
+                game.placed_row[sprite.rect.y].remove(sprite)
+                game.placed_row[sprite.rect.y + 42].add(sprite)
                 sprite.rect.y += 42
 
 def animate_rows():
@@ -273,8 +349,8 @@ def animate_rows():
     sprites = []
 
     # Generate sprites for each animation row
-    for row in animate_row:
-        if animate_row[row] == '1':
+    for row in game.animate_row:
+        if game.animate_row[row] == '1':
             sprite_list[row] = { 'f1': f1rect.copy(), 'f2': f2rect.copy() }
 
             # Position the images
@@ -290,8 +366,8 @@ def animate_rows():
     pygame.display.flip()
     pygame.time.wait(50)
 
-    for row in animate_row:
-        if animate_row[row] == '1':
+    for row in game.animate_row:
+        if game.animate_row[row] == '1':
             #Draw animation 2
             animate_surface.blit(f2, sprite_list[row]['f2'])
 
@@ -301,44 +377,8 @@ def animate_rows():
     pygame.time.wait(50)
 
     # Clear animation row list
-    for i in rows:
-        animate_row.update({i: ''})
-
-def start_game():
-    global moving_list
-    global placed_list
-    global placed_row
-    global game_in_progress
-
-    game_in_progress = True
-
-    # Create 2 lists to hold all tetris blocks on the screen
-    moving_list = pygame.sprite.Group()
-    placed_list = pygame.sprite.Group()
-
-    # Create a sprite group for each of the rows we care about
-    placed_row = [pygame.sprite.Group()] * (714 + 1)
-    for i in rows:
-        placed_row[i] = pygame.sprite.Group()
-
-    # Play music
-    bgmusic.play(-1)
-
-def game_over():
-    global game_in_progress, text, game_over_var, foreground
-    game_in_progress = False
-    game_over_var = True
-    bgmusic.stop()
-
-    text = "GAME OVER!"
-    text = basicFont.render(text, True, black)
-    textpos = text.get_rect()
-    textpos.centerx = background.get_rect().centerx
-    textpos.centery = background.get_rect().centery
-    foreground.blit(text, textpos)
-
-    # Show start over button
-    btn_restart.show_button()
+    for i in game.rows:
+        game.animate_row.update({i: ''})
 
 def add_tuples(a, b):
     # This function adds two tuples together, and returns their sum as the output (as if they were matrices)
@@ -391,67 +431,26 @@ def load_sound(name):
 
 def force_redraw():
     screen.blit(background, (0, 0))
-    moving_list.draw(screen)
-    placed_list.draw(screen)
+    game.moving_list.draw(screen)
+    game.placed_list.draw(screen)
     pygame.display.flip()
-
-def restart():
-    main()
 
 def round_down(x, base=42):
     return int(base * round(float(x)/base))
 
 def main():
-    global edge_tetris, screen_width, screen_height, margin, button_height, button_text_size, block_size
-    global game_in_progress, paused, game_over_var, draw, allows_clicks
-    global rows, bgmusic, music, pieces, black, lightblue, screen, background, foreground, transparent, basicFont
-    global btn_start, btn_exit, btn_pause, btn_restart, piece, animate_row, row_cleared
+    global black, lightblue, screen, background, foreground, transparent, basicFont
+    global btn_start, btn_exit, btn_pause, btn_restart, piece
 
-    # Define dimensions
-    edge_tetris = 420
-    screen_width = 600
-    screen_height = 756
-    margin = 20
-    button_height = 40
-    button_text_size = 48
-    block_size = 42
-
-    # List of all the rows that blocks can be in (y axis)
-    rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
-
-    # Global variables
-    game_in_progress = False
-    paused = False
-    game_over_var = False
-    draw = True
-    allows_clicks = True
-    animate_row = { }
-    for i in rows:
-        animate_row.update({i: ''})
-    row_cleared = False
-
-    # Sounds
-    music = os.path.join('assets', 'music_a.wav')
-    pygame.mixer.init()
-    bgmusic = pygame.mixer.music
-    bgmusic.load(music)
-
-    # Types of pieces
-    pieces = {}
-    pieces['long'] = { 'name': 'long', 'color': 'cyan', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (0, 84) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (0, 84) ) }
-    pieces['cornerright'] = { 'name': 'cornerright', 'color': 'blue', 'rotation_1' : ( (42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (-42, -42), (-42, 0), (-42, 42), (0, 42) ), 'rotation_3' : ( (-42, -42), (-42, 0), (42, -42), (0, -42) ), 'rotation_4' : ( (0, -42), (42, -42), (42, 0), (42, 42) ) }
-    pieces['cornerleft'] = { 'name': 'cornerleft', 'color': 'orange', 'rotation_1' : ( (-42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (0, -42), (42, -42) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (42, 42) ), 'rotation_4' : ( (-42, 42), (0, 42), (0, 0), (0, -42) ) }
-    pieces['square'] = { 'name': 'square', 'color': 'yellow', 'rotation_1' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_3' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (42, -42), (42, 0) ) }
-    pieces['zigleft'] = { 'name': 'zigleft', 'color': 'green', 'rotation_1' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (42, 0), (42, 42) ), 'rotation_3' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_4' : ( (0, -42), (0, 0), (42, 0), (42, 42) ) }
-    pieces['zigright'] = { 'name': 'zigright', 'color': 'red', 'rotation_1' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (42, 0), (42, -42) ), 'rotation_3' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_4' : ( (0, 42), (0, 0), (42, 0), (42, -42) ) }
-    pieces['tbar'] = { 'name': 'tbar', 'color': 'purple', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (0, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (42, 0) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (0, 42) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (-42, 0) ) }
+    global game
+    game = Game()
 
     # Colours
     black = (0,0,0)
     lightblue = (150, 204, 255)
 
     # Size of window
-    size = width, height = screen_width, screen_height
+    size = width, height = game.screen_width, game.screen_height
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Tetris')
 
@@ -464,13 +463,13 @@ def main():
     foreground.fill(transparent)
     foreground.set_colorkey(transparent)
     
-    basicFont = pygame.font.Font(None, button_text_size)
+    basicFont = pygame.font.Font(None, game.button_text_size)
 
     # Define action buttons
-    btn_start = Button('Start', (edge_tetris+margin, 420))
-    btn_pause = Button('Pause', (edge_tetris+margin, 420))
-    btn_exit = Button('Exit', (edge_tetris+margin, 500))
-    btn_restart = Button('Restart', (edge_tetris+margin, 420))
+    btn_start = Button('Start', (game.edge_tetris+game.margin, 420))
+    btn_pause = Button('Pause', (game.edge_tetris+game.margin, 420))
+    btn_exit = Button('Exit', (game.edge_tetris+game.margin, 500))
+    btn_restart = Button('Restart', (game.edge_tetris+game.margin, 420))
 
     # Show action buttons
     btn_start.show_button()
@@ -494,39 +493,40 @@ def main():
             if event.type == pygame.QUIT: sys.exit()
 
             # handle mouse clicks
-            if pygame.mouse.get_pressed()[0] and allows_clicks:
+            if pygame.mouse.get_pressed()[0] and game.allows_clicks:
 
                 # Prevent multiple clicks
-                allows_clicks = False
+                game.allows_clicks = False
                 pygame.time.set_timer(pygame.USEREVENT + 2, 300)
 
                 # Start/pause button
                 if btn_start.rect.collidepoint(pygame.mouse.get_pos()):
 
-                    if game_in_progress == False:
+                    if game.game_in_progress == False:
+
                         # If game over, restart the game
-                        if game_over_var:
-                            restart()
+                        if game.game_over_var:
+                            game.restart()
 
                         # Otherwise, just start
-                        start_game()
+                        game.start_game()
                         btn_pause.show_button()
-                    elif paused:
-                        paused = False
+
+                    elif game.paused:
+                        game.paused = False
                         btn_pause.show_button()
-                        bgmusic.unpause()
-                    elif game_over_var:
-                        restart()
+                        game.bgmusic.unpause()
+
                     else:
-                        paused = True
+                        game.paused = True
                         btn_start.show_button()
-                        bgmusic.pause()
+                        game.bgmusic.pause()
 
                 # Exit button
                 if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
                     pygame.quit()
 
-            if not paused and game_in_progress:
+            if not game.paused and game.game_in_progress:
 
                 # Handle keyboard presses
                 if event.type == pygame.KEYDOWN:
@@ -540,38 +540,38 @@ def main():
                         piece.update("move", "left")
 
                 if event.type == pygame.USEREVENT + 1:
-                    if game_in_progress == True:
-                        draw = False
+                    if game.game_in_progress == True:
+                        game.draw = False
                         piece.update("move")
-                        draw = True
+                        game.draw = True
 
             if event.type == pygame.USEREVENT + 2:
-                    allows_clicks = True      
+                    game.allows_clicks = True      
 
-        if game_in_progress:
-            if not moving_list:
+        if game.game_in_progress:
+            if not game.moving_list:
                 # Create new piece
                 piece = Piece()
 
         # Check if 10 in a row
-        if game_in_progress:
-            for i in rows:
-                if len(placed_row[i]) == 10:
+        if game.game_in_progress:
+            for i in game.rows:
+                if len(game.placed_row[i]) == 10:
                     clear_row(i)
-                    row_cleared = True
+                    game.row_cleared = True
 
-        if row_cleared:
+        if game.row_cleared:
             # Animate row clearing
             animate_rows()
-            row_cleared = False
+            game.row_cleared = False
 
         # Draw everything
         screen.blit(background, (0, 0))
-        if game_in_progress and draw:
-            moving_list.draw(screen)
-            placed_list.draw(screen)
+        if game.game_in_progress and game.draw:
+            game.moving_list.draw(screen)
+            game.placed_list.draw(screen)
 
-        if game_over_var:
+        if game.game_over_var:
             screen.blit(foreground, (0, 0))
 
         pygame.display.flip()
