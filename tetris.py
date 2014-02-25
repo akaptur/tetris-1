@@ -2,9 +2,6 @@ import os, sys, pygame, random, pdb
 from pygame.locals import *
 from random import choice
 
-# Global variables that need to be declared early (e.g. used in game loop)
-global piece
-
 pygame.init()
 
 class Game():
@@ -100,6 +97,73 @@ class Game():
 
         # Show start over button
         btn_restart.show_button()
+
+    def clear_row(self, thisrow):
+        # Remove all sprites in row from the placed list
+        for sprite in iter(self.placed_row[thisrow]):
+            self.placed_list.remove(sprite)
+
+        # Create a surface for the animation
+            self.animate_row.update( { thisrow : '1' } )
+
+        # And then clear this row
+        self.placed_row[thisrow].empty()
+
+        # Now shift all higher sprites down one row
+        # We work through the rows in reverse order (from bottom to top, so we only move each sprite once)
+        rows_reverse = self.rows[::-1]
+
+        for row in rows_reverse:
+            for sprite in iter(self.placed_row[row]):
+                if sprite.rect.y != thisrow and sprite.rect.y < thisrow:
+                    self.placed_row[sprite.rect.y].remove(sprite)
+                    self.placed_row[sprite.rect.y + 42].add(sprite)
+                    sprite.rect.y += 42
+
+    def animate_rows(self):
+        animate_surface = None
+        animate_surface = pygame.Surface(self.screen.get_size())
+        animate_surface.fill(self.transparent)
+        animate_surface.set_colorkey(self.transparent)
+
+        # Load the images
+        f1 = pygame.image.load("assets/flash1.bmp")
+        f2 = pygame.image.load("assets/flash2.bmp")
+        f1rect, f2rect = f1.get_rect(), f2.get_rect()
+
+        sprite_list = {}
+
+        # Generate sprites for each animation row
+        for row in self.animate_row:
+            if self.animate_row[row] == '1':
+                sprite_list[row] = { 'f1': f1rect.copy(), 'f2': f2rect.copy() }
+
+                # Position the images
+                sprite_list[row]['f1'].y, sprite_list[row]['f2'].y = row, row
+
+                print sprite_list[row]['f1']
+
+                #Draw animation
+                animate_surface.blit(f1, sprite_list[row]['f1'])
+
+        # Animate
+        self.screen.blit(animate_surface, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(50)
+
+        for row in self.animate_row:
+            if self.animate_row[row] == '1':
+                #Draw animation 2
+                animate_surface.blit(f2, sprite_list[row]['f2'])
+
+        # Second animation
+        self.screen.blit(animate_surface, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(50)
+
+        # Clear animation row list
+        for i in self.rows:
+            self.animate_row.update({i: ''})
 
 class Button:
     # On-screen button, with optional text on top of it
@@ -318,73 +382,6 @@ class Piece(pygame.sprite.Group):
         # Finally, create the new piece
         piece = Piece(self.chosenpiece, self.rotation, x_mid, y_low)
 
-def clear_row(thisrow):
-    # Remove all sprites in row from the placed list
-    for sprite in iter(game.placed_row[thisrow]):
-        game.placed_list.remove(sprite)
-
-    # Create a surface for the animation
-        game.animate_row.update( { thisrow : '1' } )
-
-    # And then clear this row
-    game.placed_row[thisrow].empty()
-
-    # Now shift all higher sprites down one row
-    # We work through the rows in reverse order (from bottom to top, so we only move each sprite once)
-    rows_reverse = game.rows[::-1]
-
-    for row in rows_reverse:
-        for sprite in iter(game.placed_row[row]):
-            if sprite.rect.y != thisrow and sprite.rect.y < thisrow:
-                game.placed_row[sprite.rect.y].remove(sprite)
-                game.placed_row[sprite.rect.y + 42].add(sprite)
-                sprite.rect.y += 42
-
-def animate_rows():
-    animate_surface = None
-    animate_surface = pygame.Surface(game.screen.get_size())
-    animate_surface.fill(game.transparent)
-    animate_surface.set_colorkey(game.transparent)
-
-    # Load the images
-    f1 = pygame.image.load("assets/flash1.bmp")
-    f2 = pygame.image.load("assets/flash2.bmp")
-    f1rect, f2rect = f1.get_rect(), f2.get_rect()
-
-    sprite_list = {}
-
-    # Generate sprites for each animation row
-    for row in game.animate_row:
-        if game.animate_row[row] == '1':
-            sprite_list[row] = { 'f1': f1rect.copy(), 'f2': f2rect.copy() }
-
-            # Position the images
-            sprite_list[row]['f1'].y, sprite_list[row]['f2'].y = row, row
-
-            print sprite_list[row]['f1']
-
-            #Draw animation
-            animate_surface.blit(f1, sprite_list[row]['f1'])
-
-    # Animate
-    game.screen.blit(animate_surface, (0, 0))
-    pygame.display.flip()
-    pygame.time.wait(50)
-
-    for row in game.animate_row:
-        if game.animate_row[row] == '1':
-            #Draw animation 2
-            animate_surface.blit(f2, sprite_list[row]['f2'])
-
-    # Second animation
-    game.screen.blit(animate_surface, (0, 0))
-    pygame.display.flip()
-    pygame.time.wait(50)
-
-    # Clear animation row list
-    for i in game.rows:
-        game.animate_row.update({i: ''})
-
 def add_tuples(a, b):
     # This function adds two tuples together, and returns their sum as the output (as if they were matrices)
     (ax, ay, aw, ah) = a
@@ -445,7 +442,7 @@ def round_down(x, base=42):
 
 def main():
     global basicFont
-    global btn_start, btn_exit, btn_pause, btn_restart, piece
+    global btn_start, btn_exit, btn_pause, btn_restart
 
     global game
     game = Game()
@@ -542,12 +539,12 @@ def main():
         if game.game_in_progress:
             for i in game.rows:
                 if len(game.placed_row[i]) == 10:
-                    clear_row(i)
+                    game.clear_row(i)
                     game.row_cleared = True
 
         if game.row_cleared:
             # Animate row clearing
-            animate_rows()
+            game.animate_rows()
             game.row_cleared = False
 
         # Draw everything
