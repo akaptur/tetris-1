@@ -49,6 +49,24 @@ class Game():
         self.pieces['zigright'] = { 'name': 'zigright', 'color': 'red', 'rotation_1' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (42, 0), (42, -42) ), 'rotation_3' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_4' : ( (0, 42), (0, 0), (42, 0), (42, -42) ) }
         self.pieces['tbar'] = { 'name': 'tbar', 'color': 'purple', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (0, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (42, 0) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (0, 42) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (-42, 0) ) }
 
+        # Colours
+        self.black = (0,0,0)
+        self.lightblue = (150, 204, 255)
+
+        # Size of window
+        size = width, height = self.screen_width, self.screen_height
+        self.screen = pygame.display.set_mode(size)
+        pygame.display.set_caption('Tetris')
+
+        # Set background image
+        self.background = pygame.image.load('assets/background.gif').convert()
+
+        # Set foreground image
+        self.foreground, self.transparent = None, (1, 2, 3)
+        self.foreground = pygame.Surface(self.screen.get_size())
+        self.foreground.fill(self.transparent)
+        self.foreground.set_colorkey(self.transparent)
+
     def start_game(self):
         self.game_in_progress = True
 
@@ -68,17 +86,17 @@ class Game():
         main()
 
     def game_over(self):
-        global text, foreground
+        global text
         self.game_in_progress = False
         self.game_over_var = True
         self.bgmusic.stop()
 
         text = "GAME OVER!"
-        text = basicFont.render(text, True, black)
+        text = basicFont.render(text, True, game.black)
         textpos = text.get_rect()
-        textpos.centerx = background.get_rect().centerx
-        textpos.centery = background.get_rect().centery
-        foreground.blit(text, textpos)
+        textpos.centerx = self.background.get_rect().centerx
+        textpos.centery = self.background.get_rect().centery
+        self.foreground.blit(text, textpos)
 
         # Show start over button
         btn_restart.show_button()
@@ -92,14 +110,14 @@ class Button:
 
         # create the button object
         self.buttonbg = pygame.Surface([game.screen_width-game.edge_tetris-2*game.margin, game.button_height])
-        self.buttonbg.fill(lightblue)
+        self.buttonbg.fill(game.lightblue)
 
         # get the rectangle for the whole button
         self.rect = self.buttonbg.get_rect()
         self.rect = pygame.Rect(add_tuples(self.rect, (self.location_xy[0], self.location_xy[1], 0, 0)))    
 
         # add the text
-        self.text = basicFont.render(self.text, True, black)
+        self.text = basicFont.render(self.text, True, game.black)
         self.textrect = self.text.get_rect()
 
         # position the button text so it is in the center of the button object
@@ -107,8 +125,8 @@ class Button:
         self.textrect.centery = self.location_xy[1] + game.button_height / 2
 
     def show_button(self):
-        background.blit(self.buttonbg, self.location_xy)
-        background.blit(self.text, self.textrect)
+        game.background.blit(self.buttonbg, self.location_xy)
+        game.background.blit(self.text, self.textrect)
 
 class IterRegistry(type):
     def __iter__(cls):
@@ -133,9 +151,6 @@ class Block(pygame.sprite.Sprite):
 
 class Piece(pygame.sprite.Group):
     def __init__(self, chosenPiece = '', rotation = 1, pos_x = 210, pos_y = 0):
-        # Create list of blocks in piece
-        self.blocks = []
-
         pygame.sprite.Group.__init__(self) #call Sprite initializer
 
         self.chosenpiece = chosenPiece
@@ -303,15 +318,6 @@ class Piece(pygame.sprite.Group):
         # Finally, create the new piece
         piece = Piece(self.chosenpiece, self.rotation, x_mid, y_low)
 
-def stop_object(movingsprite):
-    for instance in Block.instances:
-        # Stop the sprite from moving
-        instance.stop()
-
-        # Move all sprites from the moving group to the placed group
-        game.moving_list.remove(instance)
-        game.placed_list.add(instance)
-
 def clear_row(thisrow):
     # Remove all sprites in row from the placed list
     for sprite in iter(game.placed_row[thisrow]):
@@ -336,9 +342,9 @@ def clear_row(thisrow):
 
 def animate_rows():
     animate_surface = None
-    animate_surface = pygame.Surface(screen.get_size())
-    animate_surface.fill(transparent)
-    animate_surface.set_colorkey(transparent)
+    animate_surface = pygame.Surface(game.screen.get_size())
+    animate_surface.fill(game.transparent)
+    animate_surface.set_colorkey(game.transparent)
 
     # Load the images
     f1 = pygame.image.load("assets/flash1.bmp")
@@ -346,7 +352,6 @@ def animate_rows():
     f1rect, f2rect = f1.get_rect(), f2.get_rect()
 
     sprite_list = {}
-    sprites = []
 
     # Generate sprites for each animation row
     for row in game.animate_row:
@@ -362,7 +367,7 @@ def animate_rows():
             animate_surface.blit(f1, sprite_list[row]['f1'])
 
     # Animate
-    screen.blit(animate_surface, (0, 0))
+    game.screen.blit(animate_surface, (0, 0))
     pygame.display.flip()
     pygame.time.wait(50)
 
@@ -372,7 +377,7 @@ def animate_rows():
             animate_surface.blit(f2, sprite_list[row]['f2'])
 
     # Second animation
-    screen.blit(animate_surface, (0, 0))
+    game.screen.blit(animate_surface, (0, 0))
     pygame.display.flip()
     pygame.time.wait(50)
 
@@ -430,38 +435,20 @@ def load_sound(name):
     return sound
 
 def force_redraw():
-    screen.blit(background, (0, 0))
-    game.moving_list.draw(screen)
-    game.placed_list.draw(screen)
+    game.screen.blit(game.background, (0, 0))
+    game.moving_list.draw(game.screen)
+    game.placed_list.draw(game.screen)
     pygame.display.flip()
 
 def round_down(x, base=42):
     return int(base * round(float(x)/base))
 
 def main():
-    global black, lightblue, screen, background, foreground, transparent, basicFont
+    global basicFont
     global btn_start, btn_exit, btn_pause, btn_restart, piece
 
     global game
     game = Game()
-
-    # Colours
-    black = (0,0,0)
-    lightblue = (150, 204, 255)
-
-    # Size of window
-    size = width, height = game.screen_width, game.screen_height
-    screen = pygame.display.set_mode(size)
-    pygame.display.set_caption('Tetris')
-
-    # Set background image
-    background = pygame.image.load('assets/background.gif').convert()
-
-    # Set foreground image
-    foreground, transparent = None, (1, 2, 3)
-    foreground = pygame.Surface(screen.get_size())
-    foreground.fill(transparent)
-    foreground.set_colorkey(transparent)
     
     basicFont = pygame.font.Font(None, game.button_text_size)
 
@@ -477,8 +464,6 @@ def main():
 
     # Define clock
     clock = pygame.time.Clock()
-
-    gravity_delay = pygame.USEREVENT + 1
     pygame.time.set_timer(pygame.USEREVENT + 1, 500)
 
     # Force a seed (order of pieces), for debugging
@@ -566,13 +551,13 @@ def main():
             game.row_cleared = False
 
         # Draw everything
-        screen.blit(background, (0, 0))
+        game.screen.blit(game.background, (0, 0))
         if game.game_in_progress and game.draw:
-            game.moving_list.draw(screen)
-            game.placed_list.draw(screen)
+            game.moving_list.draw(game.screen)
+            game.placed_list.draw(game.screen)
 
         if game.game_over_var:
-            screen.blit(foreground, (0, 0))
+            game.screen.blit(game.foreground, (0, 0))
 
         pygame.display.flip()
 
