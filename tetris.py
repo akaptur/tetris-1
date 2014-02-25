@@ -17,7 +17,6 @@ class Button:
         # create the button object
         self.buttonbg = pygame.Surface([screen_width-edge_tetris-2*margin, button_height])
         self.buttonbg.fill(lightblue)
-        self.buttonbg = self.buttonbg.convert_alpha()
 
         # get the rectangle for the whole button
         self.rect = self.buttonbg.get_rect()
@@ -34,7 +33,6 @@ class Button:
     def show_button(self):
         background.blit(self.buttonbg, self.location_xy)
         background.blit(self.text, self.textrect)
-
 
 class IterRegistry(type):
     def __iter__(cls):
@@ -124,9 +122,6 @@ class Piece(pygame.sprite.Group):
         # Create tetris block (object)
         block = Block(color, 42, 42)
 
-        # For each block in the piece, add to the list
-        self.blocks.append(block)
-
         # Set block location
         block.rect.x = ( edge_tetris / 2 ) - ( block_size / 2 ) + x_adj - block_size/2
         block.rect.y = 0 + y_adj
@@ -182,7 +177,6 @@ class Piece(pygame.sprite.Group):
 
     def checkCollision(self, direction = ''):
         col = None
-
         col = pygame.sprite.groupcollide(moving_list, placed_list, False, False)
 
         if not col:
@@ -224,6 +218,7 @@ class Piece(pygame.sprite.Group):
 
         # Now delete the existing piece, and check the current rotation
         moving_list.empty()
+
         if self.rotation <= 3:
             self.rotation += 1
         else:
@@ -317,7 +312,7 @@ def start_game():
 
     game_in_progress = True
 
-    # Create 3 lists to hold all tetris blocks on the screen
+    # Create 2 lists to hold all tetris blocks on the screen
     moving_list = pygame.sprite.Group()
     placed_list = pygame.sprite.Group()
 
@@ -344,7 +339,6 @@ def game_over():
 
     # Show start over button
     btn_restart.show_button()
-
 
 def add_tuples(a, b):
     # This function adds two tuples together, and returns their sum as the output (as if they were matrices)
@@ -394,9 +388,6 @@ def load_sound(name):
         print 'Cannot load sound:', wav
         raise SystemExit, message
     return sound
-
-def move_piece_down():
-    piece.update("move")
 
 def force_redraw():
     screen.blit(background, (0, 0))
@@ -495,7 +486,7 @@ def main():
     # Force a seed (order of pieces), for debugging
     # random.seed(9879789)
 
-    # Constant loop to check for events
+    # Constant loop to check for events (the game loop)
     while 1:
         # Ensure game does not run faster than 60 frames/second
         clock.tick(60)
@@ -543,7 +534,7 @@ def main():
                     if event.key == pygame.K_UP: # UP Arrow
                         piece.rotate()
                     if event.key == pygame.K_DOWN: # DOWN Arrow
-                        move_piece_down()
+                        piece.update("move")
                     if event.key == pygame.K_RIGHT: # RIGHT Arrow
                         piece.update("move", "right")
                     if event.key == pygame.K_LEFT: # LEFT Arrow
@@ -552,7 +543,7 @@ def main():
                 if event.type == pygame.USEREVENT + 1:
                     if game_in_progress == True:
                         draw = False
-                        move_piece_down()
+                        piece.update("move")
                         draw = True
 
             if event.type == pygame.USEREVENT + 2:
@@ -565,14 +556,12 @@ def main():
 
         # Check if 10 in a row
         if game_in_progress:
-            all_placed_sprites = placed_list.sprites()
             for i in rows:
                 if len(placed_row[i]) == 10:
-                    force_redraw()
                     clear_row(i)
                     row_cleared = True
 
-        if (row_cleared):
+        if row_cleared:
             # Animate row clearing
             animate_rows()
             row_cleared = False
