@@ -341,7 +341,9 @@ class Piece(pygame.sprite.Group):
         col = pygame.sprite.groupcollide(game.moving_list, game.placed_list, False, False)
 
         if not col:
-            pass
+            # This ensures that when clearing rows, the pieces are drawn before the clearing animation
+            if direction == '':
+                force_redraw()
 
         elif direction == '':
             self.update("moveBack")
