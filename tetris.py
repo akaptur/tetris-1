@@ -67,10 +67,6 @@ class Piece(pygame.sprite.Group):
 
         pygame.sprite.Group.__init__(self) #call Sprite initializer
 
-        # Don't let user rotate to out of bounds
-        if pos_x > 126:
-            pos_x = 126
-
         # Create random new piece if there aren't any moving
         if chosenPiece == '':
             self.chosenpiece = random.choice(pieces.keys())
@@ -85,8 +81,41 @@ class Piece(pygame.sprite.Group):
         thiscolor = pieces[self.chosenpiece]['color']
 
         # Create pieces according to their specs
-        for pos_x, pos_y in thisrotation:
-            self.prep_new_block(pos_x, pos_y, thiscolor)
+        for x, y in thisrotation:
+            self.prep_new_block(x, y, thiscolor)
+
+        # Adjust the positions to be correct
+        # First, we adjust for height (y)
+        n_pos_y = []
+        for sprite in moving_list:
+            n_pos_x.append(sprite.rect.x)
+            n_pos_y.append(sprite.rect.y)
+
+        y_difference = pos_y - max(n_pos_y)
+
+        if y_difference > 0:
+            for sprite in moving_list:
+                sprite.rect.y += y_difference
+
+        # Next, we adjust for horizontal placement (x)
+        pos_x = round_down(pos_x)
+
+        n_x_list = { }
+        for sprite in moving_list:
+                n_x_list[sprite.rect.x] = 1
+
+        # Get unique values of x
+        n_x_values = n_x_list.keys()
+
+        x_mid = ( max(n_x_values) + min(n_x_values) ) / 2
+
+        x_mid = round_down(x_mid)
+
+        x_difference = pos_x - x_mid
+
+        # Finally, make the adjustments
+        for sprite in moving_list:
+            sprite.rect.x += x_difference
 
     def prep_new_block(self, x_adj, y_adj, color):
         # Create tetris block (object)
@@ -177,17 +206,18 @@ class Piece(pygame.sprite.Group):
 
         # First, get x and y coordinates of all blocks in piece
         y_list = []
-        x_list = []
+        x_list = { }
         for sprite in moving_list:
-            x_list.append(sprite.rect.y)
+            x_list[sprite.rect.x] = 1
             y_list.append(sprite.rect.y)
 
         # Get highest y
-        y_max = max(y_list)
+        y_low = max(y_list)
         
-        # And middle x
-        x_list.sort()
-        x_low = x_list[0]
+        # Get unique values of x
+        x_values = x_list.keys()
+
+        x_mid = ( max(x_values) + min(x_values) ) / 2
 
         # Now delete the existing piece, and check the current rotation
         moving_list.empty()
@@ -197,7 +227,7 @@ class Piece(pygame.sprite.Group):
             self.rotation = 1
 
         # Finally, create the new piece
-        piece = Piece(self.chosenpiece, self.rotation, x_low, y_max)
+        piece = Piece(self.chosenpiece, self.rotation, x_mid, y_low)
 
 def clear_bg():
         background = pygame.image.load('assets/background.gif').convert()
@@ -354,6 +384,9 @@ def force_redraw():
 
 def restart():
     main()
+
+def round_down(x, base=42):
+    return int(base * round(float(x)/base))
 
 def main():
     global edge_tetris, screen_width, screen_height, margin, button_height, button_text_size, block_size
