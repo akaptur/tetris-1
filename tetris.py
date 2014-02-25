@@ -109,9 +109,22 @@ class Piece(pygame.sprite.Group):
         # See difference between old midpoint and new midpoint
         x_difference = pos_x - x_mid
 
-        # Finally, make the adjustments
+        # Finally, make the adjustments, also double check if over an edge
+        f_pos_x = []
         for sprite in moving_list:
-            sprite.rect.x += x_difference
+            new_x = sprite.rect.x + x_difference
+            sprite.rect.x = new_x
+            f_pos_x.append(new_x)
+
+        # Check if over left edge
+        if min(f_pos_x) < 0:
+            for sprite in moving_list:
+                sprite.rect.x += -min(f_pos_x)
+
+        # Check if over right edge
+        if max(f_pos_x) >= 420:
+            for sprite in moving_list:
+                sprite.rect.x -= 42
 
     def prep_new_block(self, x_adj, y_adj, color):
         # Create tetris block (object)
