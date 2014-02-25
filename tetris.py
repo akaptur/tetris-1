@@ -3,10 +3,7 @@ from pygame.locals import *
 from random import choice
 
 # Global variables that need to be declared early (e.g. used in game loop)
-global game_in_progress
-global paused
-global game_over_var
-global piece
+global game_in_progress, paused, game_over_var, piece
 
 pygame.init()
 
@@ -61,21 +58,18 @@ class Block(pygame.sprite.Sprite):
         self.image, self.rect = load_image(color + '.bmp', -1)
 
 class Piece(pygame.sprite.Group):
-    def __init__(self, chosenPiece = '', rotation = '', pos_x = 210, pos_y = 0):
+    def __init__(self, chosenPiece = '', rotation = 1, pos_x = 210, pos_y = 0):
         # Create list of blocks in piece
         self.blocks = []
 
         pygame.sprite.Group.__init__(self) #call Sprite initializer
 
-        # Create random new piece if there aren't any moving
-        if chosenPiece == '':
-            self.chosenpiece = random.choice(pieces.keys())
-            self.rotation = 1
+        self.chosenpiece = chosenPiece
+        self.rotation = rotation
 
-        # If rotating, we specify the piece to create
-        else:
-            self.chosenpiece = chosenPiece
-            self.rotation = rotation
+        # Create random new piece if there aren't any moving
+        if self.chosenpiece == '':
+            self.chosenpiece = random.choice(pieces.keys())
 
         thisrotation = pieces[self.chosenpiece]['rotation' + "_" + str(self.rotation)]
         thiscolor = pieces[self.chosenpiece]['color']
@@ -211,7 +205,7 @@ class Piece(pygame.sprite.Group):
         moving_list.empty()
 
     def rotate(self):
-        # Rotation will be achieved by deleting the current piece, and making a new one rotated 90 degrees
+        # Rotation will be achieved by deleting the current piece, and creating a new one rotated 90 degrees
 
         # First, get x and y coordinates of all blocks in piece
         y_list = []
@@ -220,7 +214,7 @@ class Piece(pygame.sprite.Group):
             x_list[sprite.rect.x] = 1
             y_list.append(sprite.rect.y)
 
-        # Get highest y
+        # Get highest value of y (lowest position on screen)
         y_low = max(y_list)
         
         # Get unique values of x
@@ -238,10 +232,6 @@ class Piece(pygame.sprite.Group):
         # Finally, create the new piece
         piece = Piece(self.chosenpiece, self.rotation, x_mid, y_low)
 
-def clear_bg():
-        background = pygame.image.load('assets/background.gif').convert()
-        screen.blit(background, (0, 0))
-
 def stop_object(movingsprite):
     for instance in Block.instances:
         # Stop the sprite from moving
@@ -256,6 +246,9 @@ def clear_row(thisrow):
     for sprite in iter(placed_row[thisrow]):
         placed_list.remove(sprite)
 
+    # Create a surface for the animation
+        animate_row.update( { thisrow : '1' } )
+
     # And then clear this row
     placed_row[thisrow].empty()
 
@@ -266,35 +259,55 @@ def clear_row(thisrow):
     for row in rows_reverse:
         for sprite in iter(placed_row[row]):
             if sprite.rect.y != thisrow and sprite.rect.y < thisrow:
-                # Animate!
-                # Create a surface for the animation
-                animate_surface = None
-                animate_surface = pygame.Surface(screen.get_size())
-                animate_surface.fill(transparent)
-                animate_surface.set_colorkey(transparent)
-
-                # Load the images
-                flash1 = pygame.image.load("assets/flash1.bmp")
-                flash2 = pygame.image.load("assets/flash2.bmp")
-                flash1rect = flash1.get_rect()
-                flash2rect = flash2.get_rect()
-
-                # Position the images
-                flash1rect.y, flash2rect.y = thisrow, thisrow
-
-                # Show the animation
-                animate_surface.blit(flash1, flash1rect)
-                screen.blit(animate_surface, (0, 0))
-                pygame.display.flip()
-                pygame.time.wait(15)
-                animate_surface.blit(flash2, flash2rect)
-                screen.blit(animate_surface, (0, 0))
-                pygame.display.flip()
-                pygame.time.wait(15)
-
                 placed_row[sprite.rect.y].remove(sprite)
                 placed_row[sprite.rect.y + 42].add(sprite)
                 sprite.rect.y += 42
+
+def animate_rows():
+    animate_surface = None
+    animate_surface = pygame.Surface(screen.get_size())
+    animate_surface.fill(transparent)
+    animate_surface.set_colorkey(transparent)
+
+    # Load the images
+    f1 = pygame.image.load("assets/flash1.bmp")
+    f2 = pygame.image.load("assets/flash2.bmp")
+    f1rect, f2rect = f1.get_rect(), f2.get_rect()
+
+    sprite_list = {}
+    sprites = []
+
+    # Generate sprites for each animation row
+    for row in animate_row:
+        if animate_row[row] == '1':
+            sprite_list[row] = { 'f1': f1rect.copy(), 'f2': f2rect.copy() }
+
+            # Position the images
+            sprite_list[row]['f1'].y, sprite_list[row]['f2'].y = row, row
+
+            print sprite_list[row]['f1']
+
+            #Draw animation
+            animate_surface.blit(f1, sprite_list[row]['f1'])
+
+    # Animate
+    screen.blit(animate_surface, (0, 0))
+    pygame.display.flip()
+    pygame.time.wait(50)
+
+    for row in animate_row:
+        if animate_row[row] == '1':
+            #Draw animation 2
+            animate_surface.blit(f2, sprite_list[row]['f2'])
+
+    # Second animation
+    screen.blit(animate_surface, (0, 0))
+    pygame.display.flip()
+    pygame.time.wait(50)
+
+    # Clear animation row list
+    for i in rows:
+        animate_row.update({i: ''})
 
 def start_game():
     global moving_list
@@ -401,7 +414,7 @@ def main():
     global edge_tetris, screen_width, screen_height, margin, button_height, button_text_size, block_size
     global game_in_progress, paused, game_over_var, draw, allows_clicks
     global rows, bgmusic, music, pieces, black, lightblue, screen, background, foreground, transparent, basicFont
-    global btn_start, btn_exit, btn_pause, btn_restart, piece
+    global btn_start, btn_exit, btn_pause, btn_restart, piece, animate_row, row_cleared
 
     # Define dimensions
     edge_tetris = 420
@@ -412,15 +425,19 @@ def main():
     button_text_size = 48
     block_size = 42
 
+    # List of all the rows that blocks can be in (y axis)
+    rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
+
     # Global variables
     game_in_progress = False
     paused = False
     game_over_var = False
     draw = True
     allows_clicks = True
-
-    # List of all the rows that blocks can be in (y axis)
-    rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
+    animate_row = { }
+    for i in rows:
+        animate_row.update({i: ''})
+    row_cleared = False
 
     # Sounds
     music = os.path.join('assets', 'music_a.wav')
@@ -496,8 +513,6 @@ def main():
                 # Start/pause button
                 if btn_start.rect.collidepoint(pygame.mouse.get_pos()):
 
-                    clear_bg()
-
                     if game_in_progress == False:
                         # If game over, restart the game
                         if game_over_var:
@@ -552,11 +567,15 @@ def main():
         if game_in_progress:
             all_placed_sprites = placed_list.sprites()
             for i in rows:
-                # For debugging, see count of sprites in each row
-                # print i, len(placed_row[i])
                 if len(placed_row[i]) == 10:
                     force_redraw()
                     clear_row(i)
+                    row_cleared = True
+
+        if (row_cleared):
+            # Animate row clearing
+            animate_rows()
+            row_cleared = False
 
         # Draw everything
         screen.blit(background, (0, 0))
