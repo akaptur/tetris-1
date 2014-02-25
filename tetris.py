@@ -76,45 +76,17 @@ class Piece(pygame.sprite.Group):
             self.chosenpiece = random.choice(pieces.keys())
             self.rotation = 1
 
-
         # If rotating, we specify the piece to create
         else:
             self.chosenpiece = chosenPiece
             self.rotation = rotation
 
-        thisshape = pieces[self.chosenpiece[0:-1] + str(self.rotation)]['shape']
+        thisrotation = pieces[self.chosenpiece]['rotation' + "_" + str(self.rotation)]
         thiscolor = pieces[self.chosenpiece]['color']
 
-        # Create the first block
-        self.prep_new_block(pos_x, pos_y, thiscolor)
-
-        # Manually define tbar shape
-        if self.chosenpiece[0:-2] == 'tbar':
-            if self.rotation == 1:
-                self.prep_new_block(42, 0, thiscolor)
-                self.prep_new_block(84, 0, thiscolor)
-                self.prep_new_block(42, -42, thiscolor)
-            elif self.rotation == 2:
-                self.prep_new_block(0, -42, thiscolor)
-                self.prep_new_block(0, -84, thiscolor)
-                self.prep_new_block(42, -42, thiscolor)
-            elif self.rotation == 3:
-                self.prep_new_block(-42, 0, thiscolor)
-                self.prep_new_block(42, 0, thiscolor)
-                self.prep_new_block(0, 42, thiscolor)
-            else:
-                self.prep_new_block(0, -42, thiscolor)
-                self.prep_new_block(-42, 0, thiscolor)
-                self.prep_new_block(0, 42, thiscolor)
-        else:
-        # The other shapes can follow a ruleset from left to right
-            for char in thisshape:
-                if char == 'r': pos_x += 42
-                if char == 'u': pos_y -= 42
-                if char == 'd': pos_y += 42
-                if char == 'l': pos_x -= 42
-
-                self.prep_new_block(pos_x, pos_y, thiscolor)
+        # Create pieces according to their specs
+        for pos_x, pos_y in thisrotation:
+            self.prep_new_block(pos_x, pos_y, thiscolor)
 
     def prep_new_block(self, x_adj, y_adj, color):
         # Create tetris block (object)
@@ -216,11 +188,6 @@ class Piece(pygame.sprite.Group):
         # And middle x
         x_list.sort()
         x_low = x_list[0]
-
-        '''
-        if self.chosenpiece[0:-2] == 'square':
-            x_low = 
-        '''
 
         # Now delete the existing piece, and check the current rotation
         moving_list.empty()
@@ -421,37 +388,13 @@ def main():
 
     # Types of pieces
     pieces = {}
-    pieces['long_1'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan', 'rotation': '1' }
-    pieces['cornerright_1'] = { 'name': 'cornerright', 'shape': 'drr', 'color': 'blue' }
-    pieces['cornerleft_1'] = { 'name': 'cornerright', 'shape': 'rru', 'color': 'orange' }
-    pieces['square_1'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
-    pieces['zigleft_1'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
-    pieces['zigright_1'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
-    pieces['tbar_1'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
-
-    pieces['long_2'] = { 'name': 'long', 'shape': 'ddd', 'color': 'cyan', 'rotation': '2' }
-    pieces['cornerright_2'] = { 'name': 'cornerright', 'shape': 'uur', 'color': 'blue' }
-    pieces['cornerleft_2'] = { 'name': 'cornerleft', 'shape': 'ddr', 'color': 'orange' }
-    pieces['square_2'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
-    pieces['zigleft_2'] = { 'name': 'zigleft', 'shape': 'drd', 'color': 'green' }
-    pieces['zigright_2'] = { 'name': 'zigright', 'shape': 'uru', 'color': 'red' }
-    pieces['tbar_2'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
-
-    pieces['long_3'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan', 'rotation': '3' }
-    pieces['cornerright_3'] = { 'name': 'cornerright', 'shape': 'rrd', 'color': 'blue' }
-    pieces['cornerleft_3'] = { 'name': 'cornerleft', 'shape': 'urr', 'color': 'orange' }
-    pieces['square_3'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
-    pieces['zigleft_3'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
-    pieces['zigright_3'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
-    pieces['tbar_3'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
-
-    pieces['long_4'] = { 'name': 'long', 'shape': 'uuu', 'color': 'cyan', 'rotation': '4' }
-    pieces['cornerright_4'] = { 'name': 'cornerright', 'shape': 'ruu', 'color': 'blue' }
-    pieces['cornerleft_4'] = { 'name': 'cornerleft', 'shape': 'rdd', 'color': 'orange' }
-    pieces['square_4'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
-    pieces['zigleft_4'] = { 'name': 'zigleft', 'shape': 'drd', 'color': 'green' }
-    pieces['zigright_4'] = { 'name': 'zigright', 'shape': 'uru', 'color': 'red' }
-    pieces['tbar_4'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
+    pieces['long'] = { 'name': 'long', 'color': 'cyan', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (0, 84) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (0, 84) ) }
+    pieces['cornerright'] = { 'name': 'cornerright', 'color': 'blue', 'rotation_1' : ( (42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (-42, -42), (-42, 0), (-42, 42), (0, 42) ), 'rotation_3' : ( (-42, -42), (-42, 0), (42, -42), (0, -42) ), 'rotation_4' : ( (0, -42), (42, -42), (42, 0), (42, 42) ) }
+    pieces['cornerleft'] = { 'name': 'cornerleft', 'color': 'orange', 'rotation_1' : ( (-42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (0, -42), (42, -42) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (42, 42) ), 'rotation_4' : ( (-42, 42), (0, 42), (0, 0), (0, -42) ) }
+    pieces['square'] = { 'name': 'square', 'color': 'yellow', 'rotation_1' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_3' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (42, -42), (42, 0) ) }
+    pieces['zigleft'] = { 'name': 'zigleft', 'color': 'green', 'rotation_1' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (42, 0), (42, 42) ), 'rotation_3' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_4' : ( (0, -42), (0, 0), (42, 0), (42, 42) ) }
+    pieces['zigright'] = { 'name': 'zigright', 'color': 'red', 'rotation_1' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (42, 0), (42, -42) ), 'rotation_3' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_4' : ( (0, 42), (0, 0), (42, 0), (42, -42) ) }
+    pieces['tbar'] = { 'name': 'tbar', 'color': 'purple', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (0, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (42, 0) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (0, 42) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (-42, 0) ) }
 
     # Colours
     black = (0,0,0)
