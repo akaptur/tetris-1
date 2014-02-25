@@ -64,6 +64,8 @@ class Game():
         self.foreground.fill(self.transparent)
         self.foreground.set_colorkey(self.transparent)
 
+        self.basicFont = pygame.font.Font(None, self.button_text_size)
+
     def start_game(self):
         self.game_in_progress = True
 
@@ -89,7 +91,7 @@ class Game():
         self.bgmusic.stop()
 
         text = "GAME OVER!"
-        text = basicFont.render(text, True, game.black)
+        text = game.basicFont.render(text, True, game.black)
         textpos = text.get_rect()
         textpos.centerx = self.background.get_rect().centerx
         textpos.centery = self.background.get_rect().centery
@@ -181,7 +183,7 @@ class Button:
         self.rect = pygame.Rect(add_tuples(self.rect, (self.location_xy[0], self.location_xy[1], 0, 0)))    
 
         # add the text
-        self.text = basicFont.render(self.text, True, game.black)
+        self.text = game.basicFont.render(self.text, True, game.black)
         self.textrect = self.text.get_rect()
 
         # position the button text so it is in the center of the button object
@@ -441,13 +443,8 @@ def round_down(x, base=42):
     return int(base * round(float(x)/base))
 
 def main():
-    global basicFont
-    global btn_start, btn_exit, btn_pause, btn_restart
-
     global game
     game = Game()
-    
-    basicFont = pygame.font.Font(None, game.button_text_size)
 
     # Define action buttons
     btn_start = Button('Start', (game.edge_tetris+game.margin, 420))
