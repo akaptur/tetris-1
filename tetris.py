@@ -75,11 +75,11 @@ class Game():
 
         # Create a sprite group for each of the rows we care about
         self.placed_row = [pygame.sprite.Group()] * (714 + 1)
-        for i in game.rows:
-            game.placed_row[i] = pygame.sprite.Group()
+        for i in self.rows:
+            self.placed_row[i] = pygame.sprite.Group()
 
         # Play music
-        game.bgmusic.play(-1)
+        self.bgmusic.play(-1)
 
     def restart(self):
         main()
