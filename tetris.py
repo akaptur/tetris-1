@@ -61,7 +61,7 @@ class Block(pygame.sprite.Sprite):
         self.image, self.rect = load_image(color + '.bmp', -1)
 
 class Piece(pygame.sprite.Group):
-    def __init__(self, chosenPiece = '', rotation = '', pos_x = 0, pos_y = 0):
+    def __init__(self, chosenPiece = '', rotation = '', pos_x = 210, pos_y = 0):
         # Create list of blocks in piece
         self.blocks = []
 
