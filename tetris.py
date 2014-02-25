@@ -463,9 +463,8 @@ def main():
     foreground = pygame.Surface(screen.get_size())
     foreground.fill(transparent)
     foreground.set_colorkey(transparent)
-
-    # Set fonts
-    basicFont = pygame.font.SysFont(None, button_text_size)
+    
+    basicFont = pygame.font.Font(None, button_text_size)
 
     # Define action buttons
     btn_start = Button('Start', (edge_tetris+margin, 420))
