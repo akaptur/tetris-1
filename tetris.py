@@ -101,13 +101,12 @@ class Piece(pygame.sprite.Group):
         # Next, we adjust for horizontal placement (x)
         pos_x = round_down(pos_x)
 
-        # Get unique values of x
+        # Get unique values of x, find midpoint
         n_x_values = n_pos_x.keys()
-
         x_mid = ( max(n_x_values) + min(n_x_values) ) / 2
-
         x_mid = round_down(x_mid)
 
+        # See difference between old midpoint and new midpoint
         x_difference = pos_x - x_mid
 
         # Finally, make the adjustments
