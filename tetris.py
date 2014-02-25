@@ -61,31 +61,53 @@ class Block(pygame.sprite.Sprite):
         self.image, self.rect = load_image(color + '.bmp', -1)
 
 class Piece(pygame.sprite.Group):
-    def __init__(self):
+    def __init__(self, chosenPiece = '', rotation = '', pos_x = 0, pos_y = 0):
         # Create list of blocks in piece
         self.blocks = []
 
         pygame.sprite.Group.__init__(self) #call Sprite initializer
 
-        # Create random new piece if there aren't any moving
-        chosenpiece = random.choice(pieces.keys())
+        # Don't let user rotate to out of bounds
+        if pos_x > 126:
+            pos_x = 126
 
-        thisshape = pieces[chosenpiece]['shape']
-        thiscolor = pieces[chosenpiece]['color']
+        # Create random new piece if there aren't any moving
+        if chosenPiece == '':
+            self.chosenpiece = random.choice(pieces.keys())
+            self.rotation = 1
+
+
+        # If rotating, we specify the piece to create
+        else:
+            self.chosenpiece = chosenPiece
+            self.rotation = rotation
+
+        thisshape = pieces[self.chosenpiece[0:-1] + str(self.rotation)]['shape']
+        thiscolor = pieces[self.chosenpiece]['color']
 
         # Create the first block
-        self.prep_new_block(0, 0, thiscolor)
+        self.prep_new_block(pos_x, pos_y, thiscolor)
 
         # Manually define tbar shape
-        if chosenpiece == 'tbar':
-            self.prep_new_block(42, 0, thiscolor)
-            self.prep_new_block(84, 0, thiscolor)
-            self.prep_new_block(42, -42, thiscolor)
+        if self.chosenpiece[0:-2] == 'tbar':
+            if self.rotation == 1:
+                self.prep_new_block(42, 0, thiscolor)
+                self.prep_new_block(84, 0, thiscolor)
+                self.prep_new_block(42, -42, thiscolor)
+            elif self.rotation == 2:
+                self.prep_new_block(0, -42, thiscolor)
+                self.prep_new_block(0, -84, thiscolor)
+                self.prep_new_block(42, -42, thiscolor)
+            elif self.rotation == 3:
+                self.prep_new_block(-42, 0, thiscolor)
+                self.prep_new_block(42, 0, thiscolor)
+                self.prep_new_block(0, 42, thiscolor)
+            else:
+                self.prep_new_block(0, -42, thiscolor)
+                self.prep_new_block(-42, 0, thiscolor)
+                self.prep_new_block(0, 42, thiscolor)
         else:
         # The other shapes can follow a ruleset from left to right
-            pos_x = 0
-            pos_y = 0
-
             for char in thisshape:
                 if char == 'r': pos_x += 42
                 if char == 'u': pos_y -= 42
@@ -164,12 +186,10 @@ class Piece(pygame.sprite.Group):
 
         elif direction == '':
             self.update("moveBack")
+            self.stop()
 
         elif direction == 'left' or direction == 'right':
             self.update("reverse", direction)
-
-        if col:
-            self.stop()
 
     def stop(self):
         for sprite in moving_list:
@@ -181,7 +201,36 @@ class Piece(pygame.sprite.Group):
         moving_list.empty()
 
     def rotate(self):
-        pass
+        # Rotation will be achieved by deleting the current piece, and making a new one rotated 90 degrees
+
+        # First, get x and y coordinates of all blocks in piece
+        y_list = []
+        x_list = []
+        for sprite in moving_list:
+            x_list.append(sprite.rect.y)
+            y_list.append(sprite.rect.y)
+
+        # Get highest y
+        y_max = max(y_list)
+        
+        # And middle x
+        x_list.sort()
+        x_low = x_list[0]
+
+        '''
+        if self.chosenpiece[0:-2] == 'square':
+            x_low = 
+        '''
+
+        # Now delete the existing piece, and check the current rotation
+        moving_list.empty()
+        if self.rotation <= 3:
+            self.rotation += 1
+        else:
+            self.rotation = 1
+
+        # Finally, create the new piece
+        piece = Piece(self.chosenpiece, self.rotation, x_low, y_max)
 
 def clear_bg():
         background = pygame.image.load('assets/background.gif').convert()
@@ -372,14 +421,37 @@ def main():
 
     # Types of pieces
     pieces = {}
-    pieces['long'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan' }
-    pieces['cornerright'] = { 'name': 'cornerright', 'shape': 'drr', 'color': 'blue' }
-    pieces['cornerleft'] = { 'name': 'cornerright', 'shape': 'rru', 'color': 'orange' }
-    pieces['square'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
-    pieces['zigleft'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
-    pieces['zigright'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
-    pieces['tbar'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
+    pieces['long_1'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan', 'rotation': '1' }
+    pieces['cornerright_1'] = { 'name': 'cornerright', 'shape': 'drr', 'color': 'blue' }
+    pieces['cornerleft_1'] = { 'name': 'cornerright', 'shape': 'rru', 'color': 'orange' }
+    pieces['square_1'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
+    pieces['zigleft_1'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
+    pieces['zigright_1'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
+    pieces['tbar_1'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
 
+    pieces['long_2'] = { 'name': 'long', 'shape': 'ddd', 'color': 'cyan', 'rotation': '2' }
+    pieces['cornerright_2'] = { 'name': 'cornerright', 'shape': 'uur', 'color': 'blue' }
+    pieces['cornerleft_2'] = { 'name': 'cornerleft', 'shape': 'ddr', 'color': 'orange' }
+    pieces['square_2'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
+    pieces['zigleft_2'] = { 'name': 'zigleft', 'shape': 'drd', 'color': 'green' }
+    pieces['zigright_2'] = { 'name': 'zigright', 'shape': 'uru', 'color': 'red' }
+    pieces['tbar_2'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
+
+    pieces['long_3'] = { 'name': 'long', 'shape': 'rrr', 'color': 'cyan', 'rotation': '3' }
+    pieces['cornerright_3'] = { 'name': 'cornerright', 'shape': 'rrd', 'color': 'blue' }
+    pieces['cornerleft_3'] = { 'name': 'cornerleft', 'shape': 'urr', 'color': 'orange' }
+    pieces['square_3'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
+    pieces['zigleft_3'] = { 'name': 'zigleft', 'shape': 'rur', 'color': 'green' }
+    pieces['zigright_3'] = { 'name': 'zigright', 'shape': 'rdr', 'color': 'red' }
+    pieces['tbar_3'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
+
+    pieces['long_4'] = { 'name': 'long', 'shape': 'uuu', 'color': 'cyan', 'rotation': '4' }
+    pieces['cornerright_4'] = { 'name': 'cornerright', 'shape': 'ruu', 'color': 'blue' }
+    pieces['cornerleft_4'] = { 'name': 'cornerleft', 'shape': 'rdd', 'color': 'orange' }
+    pieces['square_4'] = { 'name': 'square', 'shape': 'rdl', 'color': 'yellow' }
+    pieces['zigleft_4'] = { 'name': 'zigleft', 'shape': 'drd', 'color': 'green' }
+    pieces['zigright_4'] = { 'name': 'zigright', 'shape': 'uru', 'color': 'red' }
+    pieces['tbar_4'] = { 'name': 'tbar', 'shape': '', 'color': 'purple' }
 
     # Colours
     black = (0,0,0)
