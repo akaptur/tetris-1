@@ -122,6 +122,8 @@ class Game():
                     self.placed_row[sprite.rect.y + 42].add(sprite)
                     sprite.rect.y += 42
 
+        self.row_cleared = True
+
     def animate_rows(self):
         animate_surface = None
         animate_surface = pygame.Surface(self.screen.get_size())
@@ -166,6 +168,8 @@ class Game():
         # Clear animation row list
         for i in self.rows:
             self.animate_row.update({i: ''})
+
+        self.row_cleared = False
 
 class Button:
     # On-screen button, with optional text on top of it
@@ -537,12 +541,10 @@ def main():
             for i in game.rows:
                 if len(game.placed_row[i]) == 10:
                     game.clear_row(i)
-                    game.row_cleared = True
 
         if game.row_cleared:
             # Animate row clearing
             game.animate_rows()
-            game.row_cleared = False
 
         # Draw everything
         game.screen.blit(game.background, (0, 0))
