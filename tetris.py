@@ -309,7 +309,7 @@ def start_game():
     placed_list = pygame.sprite.Group()
 
     # Create a sprite group for each of the rows we care about
-    placed_row = [pygame.sprite.Group()] * (588 + 1)
+    placed_row = [pygame.sprite.Group()] * (714 + 1)
     for i in rows:
         placed_row[i] = pygame.sprite.Group()
 
@@ -406,7 +406,7 @@ def main():
     # Define dimensions
     edge_tetris = 420
     screen_width = 600
-    screen_height = 630
+    screen_height = 756
     margin = 20
     button_height = 40
     button_text_size = 48
@@ -420,7 +420,7 @@ def main():
     allows_clicks = True
 
     # List of all the rows that blocks can be in (y axis)
-    rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588]
+    rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
 
     # Sounds
     music = os.path.join('assets', 'music_a.wav')
