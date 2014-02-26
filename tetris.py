@@ -359,11 +359,15 @@ class Piece(pygame.sprite.Group):
             for sprite in game.moving_list:
                 if direction == '':
                     sprite.rect.y += 42
-                if direction == 'right':
+                elif direction == 'right':
                     sprite.rect.x += 42
-                if direction == 'left':
+                elif direction == 'left':
                     sprite.rect.x -= 42
 
+            # Move to bottom when space is pushed       
+            if direction == 'to_bottom':
+                self.move_to_bottom()
+                        
             self.checkCollide(direction)
 
         if updateType == "moveBack":
@@ -388,6 +392,16 @@ class Piece(pygame.sprite.Group):
                     self.update("reverse", "left")
                 if sprite.rect.x >= 420:
                     self.update("reverse", "right")
+
+    def move_to_bottom(self):
+        col = self.has_sprite_collided()
+        y_list = []
+        for sprite in game.moving_list:
+            y_list.append(sprite.rect.y)
+        if not col and len(y_list) >= 4:
+            if max(y_list) <= 642:
+                self.update('move')
+                self.move_to_bottom()
 
     def checkCollide(self, direction):
             self.checkCollision(direction)
@@ -577,27 +591,35 @@ def main():
                 if btn_exit.rect.collidepoint(pygame.mouse.get_pos()):
                     pygame.quit()
 
-            if not game.paused and game.game_in_progress:
+            # Check if piece exists
+            try:
+                a = piece.chosenpiece
+            except NameError:
+                pass
+            else:
+                if not game.paused and game.game_in_progress:
 
-                # Handle keyboard presses
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP: # UP Arrow
-                        piece.rotate()
-                        if piece.has_sprite_collided():
-                            piece.rotate('counterclockwise')
+                    # Handle keyboard presses
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_UP: # UP Arrow
+                            piece.rotate()
+                            if piece.has_sprite_collided():
+                                piece.rotate('counterclockwise')
 
-                    if event.key == pygame.K_DOWN: # DOWN Arrow
-                        piece.update("move")
-                    if event.key == pygame.K_RIGHT: # RIGHT Arrow
-                        piece.update("move", "right")
-                    if event.key == pygame.K_LEFT: # LEFT Arrow
-                        piece.update("move", "left")
+                        if event.key == pygame.K_DOWN: # DOWN Arrow
+                            piece.update("move")
+                        if event.key == pygame.K_RIGHT: # RIGHT Arrow
+                            piece.update("move", "right")
+                        if event.key == pygame.K_LEFT: # LEFT Arrow
+                            piece.update("move", "left")
+                        if event.key == pygame.K_SPACE: # Space Bar
+                            piece.update("move", "to_bottom")
 
-                if event.type == pygame.USEREVENT + 1:
-                    if game.game_in_progress == True:
-                        game.draw = False
-                        piece.update("move")
-                        game.draw = True
+                    if event.type == pygame.USEREVENT + 1:
+                        if game.game_in_progress == True:
+                            game.draw = False
+                            piece.update("move")
+                            game.draw = True
 
             if event.type == pygame.USEREVENT + 2:
                     game.allows_clicks = True      
