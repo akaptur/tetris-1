@@ -70,6 +70,11 @@ class Game():
 
         self.basicFont = pygame.font.Font(None, self.button_text_size)
 
+        # For handling score text
+        self.scoretext = self.basicFont.render(str(self.score), True, self.black)
+        self.scoretextrect = self.scoretext.get_rect()
+        self.scoretextrect.x = 500
+
     def start_game(self):
         self.game_in_progress = True
 
@@ -185,6 +190,8 @@ class Game():
     def update_score(self):
         points_map = { 1: 40, 2: 100, 3: 300, 4: 1200 }
         self.score += ( points_map[self.rows_cleared] * ( self.level + 1) )
+        drawText('Score: ' + str(self.score), self.basicFont, self.screen, 440, 10)
+        pygame.display.update()
 
 class Button:
     # On-screen button, with optional text on top of it
@@ -466,6 +473,12 @@ def load_sound(name):
 def round_down(x, base=42):
     return int(base * round(float(x)/base))
 
+def drawText(text, font, surface, x, y):
+    textobj = font.render(text, 1, game.black)
+    textrect = textobj.get_rect()
+    textrect.topleft = (x, y)
+    surface.blit(textobj, textrect)
+
 def main():
     global game, btn_start, btn_pause, btn_exit, btn_restart
     game = Game()
@@ -574,6 +587,7 @@ def main():
 
         # Draw everything
         game.screen.blit(game.background, (0, 0))
+
         if game.game_in_progress and game.draw:
             game.moving_list.draw(game.screen)
             game.placed_list.draw(game.screen)
