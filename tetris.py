@@ -37,7 +37,7 @@ class Game(object):
         self.white = (255, 255, 255)
 
         # List of all the rows that blocks can be in (y axis)
-        self.rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
+        self.rows = [42*i for i in range(1,18)]
 
         self.animate_row = { }
         for i in self.rows:
