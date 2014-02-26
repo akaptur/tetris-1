@@ -78,7 +78,7 @@ class Game():
         self.smallFont = pygame.font.Font(None, self.small_text_size)
 
         # Background to be used to overwrite old scores
-        self.score_bg = pygame.Surface((180,50))
+        self.score_bg = pygame.Surface((180,100))
         self.score_bg.fill(self.white)
         self.score_bg_rect = self.score_bg.get_rect()
         self.score_bg_rect.x += 420
@@ -100,6 +100,7 @@ class Game():
 
         # Show score
         self.update_score()
+        self.calculate_level()
 
     def restart(self):
         main()
@@ -212,7 +213,7 @@ class Game():
         # Now draw over again with the updated score
         self.scoretext = self.smallFont.render("Score: " + str(self.score), True, self.black)
         self.scoretextrect = self.scoretext.get_rect()
-        self.scoretextrect.x, self.scoretextrect.y = 440, 20
+        self.scoretextrect.x, self.scoretextrect.y = 440, 50
         game.background.blit(self.scoretext, self.scoretextrect)
 
     def calculate_level(self):
@@ -227,6 +228,11 @@ class Game():
 
         self.level = max(self.initial_level, self.earned_level)
         self.speed = 550 - (self.level * 50)
+
+        self.leveltext = self.smallFont.render("Level: " + str(self.level), True, self.black)
+        self.leveltextrect = self.leveltext.get_rect()
+        self.leveltextrect.x, self.leveltextrect.y = 440, 20
+        game.background.blit(self.leveltext, self.leveltextrect)
 
 class Button:
     # On-screen button, with optional text on top of it
