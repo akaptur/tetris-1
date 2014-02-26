@@ -53,13 +53,13 @@ class Game(object):
 
         # Types of pieces
         self.pieces = {}
-        self.pieces['long'] = { 'name': 'long', 'color': 'cyan', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (0, 84) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (0, 84) ) }
-        self.pieces['cornerright'] = { 'name': 'cornerright', 'color': 'blue', 'rotation_1' : ( (42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (-42, -42), (-42, 0), (-42, 42), (0, 42) ), 'rotation_3' : ( (-42, -42), (-42, 0), (42, -42), (0, -42) ), 'rotation_4' : ( (0, -42), (42, -42), (42, 0), (42, 42) ) }
-        self.pieces['cornerleft'] = { 'name': 'cornerleft', 'color': 'orange', 'rotation_1' : ( (-42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (0, -42), (42, -42) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (42, 42) ), 'rotation_4' : ( (-42, 42), (0, 42), (0, 0), (0, -42) ) }
-        self.pieces['square'] = { 'name': 'square', 'color': 'yellow', 'rotation_1' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_3' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_4' : ( (0, -42), (0, 0), (42, -42), (42, 0) ) }
-        self.pieces['zigleft'] = { 'name': 'zigleft', 'color': 'green', 'rotation_1' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (42, 0), (42, 42) ), 'rotation_3' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_4' : ( (0, -42), (0, 0), (42, 0), (42, 42) ) }
-        self.pieces['zigright'] = { 'name': 'zigright', 'color': 'red', 'rotation_1' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (42, 0), (42, -42) ), 'rotation_3' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_4' : ( (0, 42), (0, 0), (42, 0), (42, -42) ) }
-        self.pieces['tbar'] = { 'name': 'tbar', 'color': 'purple', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (0, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (42, 0) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (0, 42) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (-42, 0) ) }
+        self.pieces['long'] = { 'name': 'long', 'color': 'cyan', 'rotation_0' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_1' : ( (0, -42), (0, 0), (0, 42), (0, 84) ), 'rotation_2' : ( (-42, 0), (0, 0), (42, 0), (84, 0) ), 'rotation_3' : ( (0, -42), (0, 0), (0, 42), (0, 84) ) }
+        self.pieces['cornerright'] = { 'name': 'cornerright', 'color': 'blue', 'rotation_0' : ( (42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_1' : ( (-42, -42), (-42, 0), (-42, 42), (0, 42) ), 'rotation_2' : ( (-42, -42), (-42, 0), (42, -42), (0, -42) ), 'rotation_3' : ( (0, -42), (42, -42), (42, 0), (42, 42) ) }
+        self.pieces['cornerleft'] = { 'name': 'cornerleft', 'color': 'orange', 'rotation_0' : ( (-42, -42), (-42, 0), (0, 0), (42, 0) ), 'rotation_1' : ( (0, 42), (0, 0), (0, -42), (42, -42) ), 'rotation_2' : ( (-42, 0), (0, 0), (42, 0), (42, 42) ), 'rotation_3' : ( (-42, 42), (0, 42), (0, 0), (0, -42) ) }
+        self.pieces['square'] = { 'name': 'square', 'color': 'yellow', 'rotation_0' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_1' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_2' : ( (0, -42), (0, 0), (42, -42), (42, 0) ), 'rotation_3' : ( (0, -42), (0, 0), (42, -42), (42, 0) ) }
+        self.pieces['zigleft'] = { 'name': 'zigleft', 'color': 'green', 'rotation_0' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_1' : ( (0, -42), (0, 0), (42, 0), (42, 42) ), 'rotation_2' : ( (-42, 0), (0, 0), (0, -42), (42, -42) ), 'rotation_3' : ( (0, -42), (0, 0), (42, 0), (42, 42) ) }
+        self.pieces['zigright'] = { 'name': 'zigright', 'color': 'red', 'rotation_0' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_1' : ( (0, 42), (0, 0), (42, 0), (42, -42) ), 'rotation_2' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_3' : ( (0, 42), (0, 0), (42, 0), (42, -42) ) }
+        self.pieces['tbar'] = { 'name': 'tbar', 'color': 'purple', 'rotation_0' : ( (-42, 0), (0, 0), (42, 0), (0, -42) ), 'rotation_1' : ( (0, -42), (0, 0), (0, 42), (42, 0) ), 'rotation_2' : ( (-42, 0), (0, 0), (42, 0), (0, 42) ), 'rotation_3' : ( (0, -42), (0, 0), (0, 42), (-42, 0) ) }
 
         # Size of window
         size = width, height = self.screen_width, self.screen_height
@@ -284,7 +284,7 @@ class Block(pygame.sprite.Sprite):
         self.image, self.rect = load_image(color + '.bmp', -1)
 
 class Piece(pygame.sprite.Group):
-    def __init__(self, chosenPiece = '', rotation = 1, pos_x = 210, pos_y = 0):
+    def __init__(self, chosenPiece = '', rotation = 0, pos_x = 210, pos_y = 0):
         pygame.sprite.Group.__init__(self) #call Sprite initializer
 
         self.chosenpiece = chosenPiece
@@ -464,15 +464,9 @@ class Piece(pygame.sprite.Group):
         game.moving_list.empty()
 
         if direction == 'clockwise':
-            if self.rotation <= 3:
-                self.rotation += 1
-            else:
-                self.rotation = 1
+            self.rotation = ( self.rotation + 1 ) % 4
         else:
-            if self.rotation == 1:
-                self.rotation = 4
-            else:
-                self.rotation -= 1
+            self.rotation = ( self.rotation + 3 ) % 4
 
         # Finally, create the new piece
         piece = Piece(self.chosenpiece, self.rotation, x_mid, y_low)
