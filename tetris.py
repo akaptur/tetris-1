@@ -2,6 +2,7 @@ import os, sys, pygame, random, pdb
 from pygame.locals import *
 from random import choice
 
+pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
 
 class Game():
@@ -21,6 +22,8 @@ class Game():
         self.game_in_progress = False
         self.paused = False
         self.game_over_var = False
+        self.score = 0
+        self.level = 0
 
         # List of all the rows that blocks can be in (y axis)
         self.rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
@@ -28,13 +31,14 @@ class Game():
         self.animate_row = { }
         for i in self.rows:
             self.animate_row.update({i: ''})
-        self.row_cleared = False
+        self.rows_cleared = 0
 
         # Sounds
         self.music = os.path.join('assets', 'music_a.wav')
         pygame.mixer.init()
         self.bgmusic = pygame.mixer.music
         self.bgmusic.load(self.music)
+        self.clear_sound = load_sound('4-clear.wav')
 
         # Types of pieces
         self.pieces = {}
@@ -101,6 +105,9 @@ class Game():
         btn_restart.show_button()
 
     def clear_row(self, thisrow):
+        # Play the sound
+        self.clear_sound.play()
+
         # Remove all sprites in row from the placed list
         for sprite in iter(self.placed_row[thisrow]):
             self.placed_list.remove(sprite)
@@ -122,7 +129,7 @@ class Game():
                     self.placed_row[sprite.rect.y + 42].add(sprite)
                     sprite.rect.y += 42
 
-        self.row_cleared = True
+        self.rows_cleared += 1
 
     def animate_rows(self):
         animate_surface = None
@@ -144,8 +151,6 @@ class Game():
 
                 # Position the images
                 sprite_list[row]['f1'].y, sprite_list[row]['f2'].y = row, row
-
-                print sprite_list[row]['f1']
 
                 #Draw animation
                 animate_surface.blit(f1, sprite_list[row]['f1'])
@@ -169,7 +174,17 @@ class Game():
         for i in self.rows:
             self.animate_row.update({i: ''})
 
-        self.row_cleared = False
+        self.rows_cleared = 0
+
+    def force_redraw(self):
+        self.screen.blit(self.background, (0, 0))
+        self.moving_list.draw(self.screen)
+        self.placed_list.draw(self.screen)
+        pygame.display.flip()
+
+    def update_score(self):
+        points_map = { 1: 40, 2: 100, 3: 300, 4: 1200 }
+        self.score += ( points_map[self.rows_cleared] * ( self.level + 1) )
 
 class Button:
     # On-screen button, with optional text on top of it
@@ -337,13 +352,12 @@ class Piece(pygame.sprite.Group):
                 self.stop()
 
     def checkCollision(self, direction = ''):
-        col = None
-        col = pygame.sprite.groupcollide(game.moving_list, game.placed_list, False, False)
+        col = self.has_sprite_collided()
 
         if not col:
             # This ensures that when clearing rows, the pieces are drawn before the clearing animation
             if direction == '':
-                force_redraw()
+                game.force_redraw()
 
         elif direction == '':
             self.update("moveBack")
@@ -351,6 +365,11 @@ class Piece(pygame.sprite.Group):
 
         elif direction == 'left' or direction == 'right':
             self.update("reverse", direction)
+
+    def has_sprite_collided(self):
+        col = None
+        col = pygame.sprite.groupcollide(game.moving_list, game.placed_list, False, False)
+        return col
 
     def stop(self):
         for sprite in game.moving_list:
@@ -361,9 +380,8 @@ class Piece(pygame.sprite.Group):
          
         game.moving_list.empty()
 
-    def rotate(self):
+    def rotate(self, direction = 'clockwise'):
         # Rotation will be achieved by deleting the current piece, and creating a new one rotated 90 degrees
-
         # First, get x and y coordinates of all blocks in piece
         y_list = []
         x_list = { }
@@ -382,10 +400,16 @@ class Piece(pygame.sprite.Group):
         # Now delete the existing piece, and check the current rotation
         game.moving_list.empty()
 
-        if self.rotation <= 3:
-            self.rotation += 1
+        if direction == 'clockwise':
+            if self.rotation <= 3:
+                self.rotation += 1
+            else:
+                self.rotation = 1
         else:
-            self.rotation = 1
+            if self.rotation == 1:
+                self.rotation = 4
+            else:
+                self.rotation -= 1
 
         # Finally, create the new piece
         piece = Piece(self.chosenpiece, self.rotation, x_mid, y_low)
@@ -439,17 +463,11 @@ def load_sound(name):
         raise SystemExit, message
     return sound
 
-def force_redraw():
-    game.screen.blit(game.background, (0, 0))
-    game.moving_list.draw(game.screen)
-    game.placed_list.draw(game.screen)
-    pygame.display.flip()
-
 def round_down(x, base=42):
     return int(base * round(float(x)/base))
 
 def main():
-    global game
+    global game, btn_start, btn_pause, btn_exit, btn_restart
     game = Game()
 
     # Define action buttons
@@ -517,6 +535,9 @@ def main():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP: # UP Arrow
                         piece.rotate()
+                        if piece.has_sprite_collided():
+                            piece.rotate('counterclockwise')
+
                     if event.key == pygame.K_DOWN: # DOWN Arrow
                         piece.update("move")
                     if event.key == pygame.K_RIGHT: # RIGHT Arrow
@@ -544,7 +565,10 @@ def main():
                 if len(game.placed_row[i]) == 10:
                     game.clear_row(i)
 
-        if game.row_cleared:
+        if game.rows_cleared > 0:
+            # Update score
+            game.update_score()
+
             # Animate row clearing
             game.animate_rows()
 
