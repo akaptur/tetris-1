@@ -6,7 +6,7 @@ pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
 
 class Game():
-    def __init__(self):
+    def __init__(self, initial_level = 0):
         # Define dimensions
         self.edge_tetris = 420
         self.screen_width = 600
@@ -25,6 +25,10 @@ class Game():
         self.game_over_var = False
         self.score = 0
         self.level = 0
+        self.initial_level = initial_level
+        self.earned_level = 0
+        self.lines_completed = 0
+        self.speed = 550
 
         # Colours
         self.black = (0, 0, 0)
@@ -93,6 +97,9 @@ class Game():
 
         # Play music
         self.bgmusic.play(-1)
+
+        # Show score
+        self.update_score()
 
     def restart(self):
         main()
@@ -183,6 +190,9 @@ class Game():
         for i in self.rows:
             self.animate_row.update({i: ''})
 
+        # Update the counter of rows cleared this game
+        self.lines_completed += self.rows_cleared
+
         self.rows_cleared = 0
 
     def force_redraw(self):
@@ -193,7 +203,8 @@ class Game():
 
     def update_score(self):
         points_map = { 1: 40, 2: 100, 3: 300, 4: 1200 }
-        self.score += ( points_map[self.rows_cleared] * ( self.level + 1) )
+        if self.rows_cleared > 0:
+            self.score += ( points_map[self.rows_cleared] * ( self.level + 1) )
 
         # First draw over the area with a white filled rectangle
         game.background.blit(self.score_bg, self.score_bg_rect)
@@ -203,6 +214,19 @@ class Game():
         self.scoretextrect = self.scoretext.get_rect()
         self.scoretextrect.x, self.scoretextrect.y = 440, 20
         game.background.blit(self.scoretext, self.scoretextrect)
+
+    def calculate_level(self):
+        if self.lines_completed <= 0:
+            self.earned_level = 1
+        
+        elif self.lines_completed >= 1 and self.lines_completed <= 90:
+            self.earned_level = 1 + ( ( self.lines_completed - 1) / 10 )
+
+        elif self.lines_completed >= 91:
+            self.earned_level = 10
+
+        self.level = max(self.initial_level, self.earned_level)
+        self.speed = 550 - (self.level * 50)
 
 class Button:
     # On-screen button, with optional text on top of it
@@ -500,7 +524,7 @@ def main():
 
     # Define clock
     clock = pygame.time.Clock()
-    pygame.time.set_timer(pygame.USEREVENT + 1, 500)
+    pygame.time.set_timer(pygame.USEREVENT + 1, game.speed)
 
     # Force a seed (order of pieces), for debugging
     # random.seed(9879789)
@@ -589,6 +613,12 @@ def main():
 
             # Animate row clearing
             game.animate_rows()
+
+            # Recalculate level
+            game.calculate_level()
+
+            # Recalibrate clock
+            pygame.time.set_timer(pygame.USEREVENT + 1, game.speed)
 
         # Draw everything
         game.screen.blit(game.background, (0, 0))
