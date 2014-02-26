@@ -70,7 +70,7 @@ class Game(object):
         self.background = pygame.image.load('assets/background.gif').convert()
 
         # Set foreground image
-        self.foreground, self.transparent = None, (1, 2, 3)
+        self.transparent = (1, 2, 3)
         self.foreground = pygame.Surface(self.screen.get_size())
         self.foreground.fill(self.transparent)
         self.foreground.set_colorkey(self.transparent)
@@ -92,7 +92,7 @@ class Game(object):
         self.placed_list = pygame.sprite.Group()
 
         # Create a sprite group for each of the rows we care about
-        self.placed_row = [pygame.sprite.Group()] * (714 + 1)
+        self.placed_row = [''] * (714 + 1)
         for i in self.rows:
             self.placed_row[i] = pygame.sprite.Group()
 
@@ -104,10 +104,9 @@ class Game(object):
         self.calculate_level()
 
     def restart(self):
-        main()
+        main() # cheating
 
     def game_over(self):
-        global text
         self.game_in_progress = False
         self.game_over_var = True
         self.bgmusic.stop()
@@ -131,7 +130,7 @@ class Game(object):
             self.placed_list.remove(sprite)
 
         # Create a surface for the animation
-            self.animate_row.update( { thisrow : '1' } )
+        self.animate_row.update( { thisrow : '1' } )
 
         # And then clear this row
         self.placed_row[thisrow].empty()
@@ -142,7 +141,7 @@ class Game(object):
 
         for row in rows_reverse:
             for sprite in iter(self.placed_row[row]):
-                if sprite.rect.y != thisrow and sprite.rect.y < thisrow:
+                if sprite.rect.y < thisrow:
                     self.placed_row[sprite.rect.y].remove(sprite)
                     self.placed_row[sprite.rect.y + 42].add(sprite)
                     sprite.rect.y += 42
@@ -150,7 +149,6 @@ class Game(object):
         self.rows_cleared += 1
 
     def animate_rows(self):
-        animate_surface = None
         animate_surface = pygame.Surface(self.screen.get_size())
         animate_surface.fill(self.transparent)
         animate_surface.set_colorkey(self.transparent)
