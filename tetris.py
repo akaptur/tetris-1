@@ -41,7 +41,7 @@ class Game(object):
 
         self.animate_row = { }
         for i in self.rows:
-            self.animate_row.update({i: ''})
+            self.animate_row[i] = ''
         self.rows_cleared = 0
 
         # Sounds
