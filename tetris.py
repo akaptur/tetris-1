@@ -19,7 +19,6 @@ class Game(object):
 
         # State of the game
         self.draw = True
-        self.allows_clicks = True
         self.game_in_progress = False
         self.paused = False
         self.game_over_var = False
@@ -558,11 +557,7 @@ def main():
             if event.type == pygame.QUIT: sys.exit()
 
             # handle mouse clicks
-            if pygame.mouse.get_pressed()[0] and game.allows_clicks:
-
-                # Prevent multiple clicks
-                game.allows_clicks = False
-                pygame.time.set_timer(pygame.USEREVENT + 2, 300)
+            if event.type == pygame.MOUSEBUTTONDOWN:
 
                 # Start/pause button
                 if btn_start.rect.collidepoint(pygame.mouse.get_pos()):
