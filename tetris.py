@@ -2,6 +2,8 @@ import os, sys, pygame, random, pdb
 from pygame.locals import *
 from random import choice
 
+CLOCK_TICK = pygame.USEREVENT + 1
+
 pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
 
@@ -543,7 +545,7 @@ def main():
 
     # Define clock
     clock = pygame.time.Clock()
-    pygame.time.set_timer(pygame.USEREVENT + 1, game.speed)
+    pygame.time.set_timer(CLOCK_TICK, game.speed)
 
     # Force a seed (order of pieces), for debugging
     # random.seed(9879789)
@@ -610,14 +612,11 @@ def main():
                         if event.key == pygame.K_SPACE: # Space Bar
                             piece.update("move", "to_bottom")
 
-                    if event.type == pygame.USEREVENT + 1:
+                    if event.type == CLOCK_TICK:
                         if game.game_in_progress == True:
                             game.draw = False
                             piece.update("move")
-                            game.draw = True
-
-            if event.type == pygame.USEREVENT + 2:
-                    game.allows_clicks = True      
+                            game.draw = True   
 
         if game.game_in_progress:
             if not game.moving_list:
@@ -641,7 +640,7 @@ def main():
             game.calculate_level()
 
             # Recalibrate clock
-            pygame.time.set_timer(pygame.USEREVENT + 1, game.speed)
+            pygame.time.set_timer(CLOCK_TICK, game.speed)
 
         # Draw everything
         game.screen.blit(game.background, (0, 0))
