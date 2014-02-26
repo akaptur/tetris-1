@@ -14,6 +14,7 @@ class Game():
         self.margin = 20
         self.button_height = 40
         self.button_text_size = 48
+        self.small_text_size = 24
         self.block_size = 42
 
         # State of the game
@@ -24,6 +25,11 @@ class Game():
         self.game_over_var = False
         self.score = 0
         self.level = 0
+
+        # Colours
+        self.black = (0, 0, 0)
+        self.lightblue = (150, 204, 255)
+        self.white = (255, 255, 255)
 
         # List of all the rows that blocks can be in (y axis)
         self.rows = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420, 462, 504, 546, 588, 630, 672, 714]
@@ -50,10 +56,6 @@ class Game():
         self.pieces['zigright'] = { 'name': 'zigright', 'color': 'red', 'rotation_1' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_2' : ( (0, 42), (0, 0), (42, 0), (42, -42) ), 'rotation_3' : ( (-42, -42), (0, -42), (0, 0), (42, 0) ), 'rotation_4' : ( (0, 42), (0, 0), (42, 0), (42, -42) ) }
         self.pieces['tbar'] = { 'name': 'tbar', 'color': 'purple', 'rotation_1' : ( (-42, 0), (0, 0), (42, 0), (0, -42) ), 'rotation_2' : ( (0, -42), (0, 0), (0, 42), (42, 0) ), 'rotation_3' : ( (-42, 0), (0, 0), (42, 0), (0, 42) ), 'rotation_4' : ( (0, -42), (0, 0), (0, 42), (-42, 0) ) }
 
-        # Colours
-        self.black = (0,0,0)
-        self.lightblue = (150, 204, 255)
-
         # Size of window
         size = width, height = self.screen_width, self.screen_height
         self.screen = pygame.display.set_mode(size)
@@ -69,11 +71,13 @@ class Game():
         self.foreground.set_colorkey(self.transparent)
 
         self.basicFont = pygame.font.Font(None, self.button_text_size)
+        self.smallFont = pygame.font.Font(None, self.small_text_size)
 
-        # For handling score text
-        self.scoretext = self.basicFont.render(str(self.score), True, self.black)
-        self.scoretextrect = self.scoretext.get_rect()
-        self.scoretextrect.x = 500
+        # Background to be used to overwrite old scores
+        self.score_bg = pygame.Surface((180,50))
+        self.score_bg.fill(self.white)
+        self.score_bg_rect = self.score_bg.get_rect()
+        self.score_bg_rect.x += 420
 
     def start_game(self):
         self.game_in_progress = True
@@ -190,8 +194,15 @@ class Game():
     def update_score(self):
         points_map = { 1: 40, 2: 100, 3: 300, 4: 1200 }
         self.score += ( points_map[self.rows_cleared] * ( self.level + 1) )
-        drawText('Score: ' + str(self.score), self.basicFont, self.screen, 440, 10)
-        pygame.display.update()
+
+        # First draw over the area with a white filled rectangle
+        game.background.blit(self.score_bg, self.score_bg_rect)
+
+        # Now draw over again with the updated score
+        self.scoretext = self.smallFont.render("Score: " + str(self.score), True, self.black)
+        self.scoretextrect = self.scoretext.get_rect()
+        self.scoretextrect.x, self.scoretextrect.y = 440, 20
+        game.background.blit(self.scoretext, self.scoretextrect)
 
 class Button:
     # On-screen button, with optional text on top of it
@@ -472,12 +483,6 @@ def load_sound(name):
 
 def round_down(x, base=42):
     return int(base * round(float(x)/base))
-
-def drawText(text, font, surface, x, y):
-    textobj = font.render(text, 1, game.black)
-    textrect = textobj.get_rect()
-    textrect.topleft = (x, y)
-    surface.blit(textobj, textrect)
 
 def main():
     global game, btn_start, btn_pause, btn_exit, btn_restart
