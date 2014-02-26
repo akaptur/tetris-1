@@ -5,7 +5,7 @@ from random import choice
 pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
 
-class Game():
+class Game(object):
     def __init__(self, initial_level = 0):
         # Define dimensions
         self.edge_tetris = 420
@@ -234,7 +234,7 @@ class Game():
         self.leveltextrect.x, self.leveltextrect.y = 440, 20
         game.background.blit(self.leveltext, self.leveltextrect)
 
-class Button:
+class Button(object):
     # On-screen button, with optional text on top of it
     def __init__(self, text, location_xy):
         # store attributes on object
